@@ -1,0 +1,27 @@
+
+.hint {
+	display: none;
+	height: 1em;
+	float: left;
+}
+
+.hint div {
+	margin-left: 20px;
+	padding: 5px;
+	border: 1px solid #f4f4f4;
+	background-color: #ffffe0;
+	position:relative; /* top:5px; left:20px; */
+}
+
+.hint div ul {
+	margin-left: 30px;
+}
+
+.hint-arrow {
+	background: url(/IMG/arrow.png) left top no-repeat;
+	width: 10px;
+	height: 19px;
+	float: left;
+	margin-left: -15px;
+}
+

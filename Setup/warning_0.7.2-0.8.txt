@@ -1,0 +1,7 @@
+
+Software Packages: For LDAP support, MOTP-AS needs PHP's LDAP module installed. 
+On previous pre-build images, this module is not installed, you have to add it 
+manually.
+If you do not want to use LDAP, you may ignore this. It then makes sense to 
+deactivate LDAP support in the general system settings.
+

@@ -1,0 +1,54 @@
+
+UPDATE
+======
+
+
+PREREQUISITES
+-------------
+
+Before updating please read "warning_xx-yy.txt" (xx = your current version)
+This file explains the differences to the old version and what you additionally
+have to do beside replacing PHP files and updating database.
+
+
+UPDATING
+--------
+If you want to update MOTP-AS to the newest version, there are three
+possibilites:
+   A. Updating using "update.sh" script (see below)
+   B. Re-install MOTP-AS (see below)
+   C. Updating manually
+
+In all three cases
+   1. Backup the current version/server. 
+	This can be a snaphsot if MOTP-AS is running as Virtual System, 
+	or any other method. 
+	Please make sure, that the backup also includes the database.
+   2. Update, see below
+   3. Test the new version and verify, that everything is still working.
+	You should do this immediately after updating, because rolling back
+	means, that you also reverts all changes, that have been done since
+	update.
+
+A. Updating using "update.sh" script
+    a) Download source tgz
+    b) extract source and change into directory MOTP-AS_v.../Setup
+    c) Execute "./update.sh"
+	The script will ask you where your PHP files are installed (html root)
+	and how to access database, if there there are changes on database.
+    d) Modify additional settings as described in "warning_xx-yy.txt"
+
+B. Re-install MOTP-AS
+    a) Backup the data.
+	This mainly is the database, but also includes systems modifications,
+	which could be amongst others:
+		- your settings in config.php
+		- changes in Freeradius configuration
+		- Apache configuration
+		- system accounts (ssh keys, etc.)
+		- For database backup you can use phpMyAdmin.
+    b) Install new version
+    c) Import database backup (using phpMyAdmin for example)
+    d) Change system settings in config.php
+    e) Restore system modifications, see above
+

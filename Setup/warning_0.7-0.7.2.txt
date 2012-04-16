@@ -1,0 +1,8 @@
+
+Please note, that since version 0.7.2 the configuration settings in the database
+are preferred. Settings in "config.php" are legacy, only the settings to access
+the database are needed.
+
+If you upgrade, the settings in the database will _not_ be set to your values in
+"config.php". Please use the Web Interface to change the values in the database!
+

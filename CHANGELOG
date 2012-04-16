@@ -1,0 +1,145 @@
+Version 0.8
+  * LDAP support 
+	- syncing users/devices from LDAP
+	- using LDAP password as temporary password
+	- use LDAP values for RADIUS attribute checking/sending/logging
+	You can switch LDAP support off by setting USE_LDAP to FALSE.
+	See documentation at http://motp-as.network-cube.de/ for how to use
+  * Bug fixes
+	- ignored configuration settings for RADIUS
+	- locked users could login with static passwords
+  * Changes and new features
+	- splitted configuration settings into preferences, global settings,
+	  and LDAP settings
+	- new parameter PIN_MIN_LENGTH for minimum length when setting new pins,
+	  default is 4, that means all 4 digits must be used.
+	- If device was locked because of too many failed login attempts,
+	  the try counter will be reset after LOCK_GRACE_MINS minutes.
+	  If value is 0 (default), user has to be unlocked manually.
+	- Sorting in lists
+
+Version 0.7.2
+  * configuration: now via database
+	- settings in database are preferred!
+	- settings can be changed via web interface
+  * IPv6 support
+	- RADIUS clients can have IPv6 addresses, but
+	- you have to modify Freeradius config (radiusd.conf) to listen to IPv6
+	  and replace the file "dynamic-clients" with the new version.
+	  Freeradius only listens to either IPv4 or IPv6.
+  * logging
+	- The server can delete old log entries. Default is not to delete.
+	  To purge entries there are three new configuration parameters 
+	  LOGS_PURGE_xxx for authentication, accounting and audit log.
+        - uniform log entries
+  * Web interface
+	- simple import/export of database to have a backup.
+	- deletion of data now has to be confirmed; you can switch it off.
+
+Version 0.7.1
+  * openSUSE image for XEN
+
+Version 0.7
+	Please read "warning_0.6-0.7.txt" before updating. This file
+	explains the differences to version 0.6 and what you additionally
+	have to do beside replacing PHP files and updating database.
+  * database
+	- You must upgrade database for profiles, see Setup/migrate_0.6-0.7.sql
+  * configuration:
+	- global configuration in config.php now moved to new database table.
+	  Old style configuration in config.php is still valid and preferred
+	  as long as there is no web interface for changing config.
+  * OTP generation:
+	- admins can now generate one time passcodes for testing,
+          see flag $GENERATE_PASSCODE in config.php
+  	- users can download "HTML client", a very simple motp client.
+	  Please be aware, that this client stores secret as cleartext in HTML!
+  * Authentication:
+	- decreased max allowed drift between device and server to 3 minutes.
+	- check username; only alphanumeric and some special characters allowed,
+	  all other requests will be rejected! See $VALID_CHARS in config.php
+  * RADIUS
+	- more checks for input from RADIUS server, see above.
+	- RADIUS profiles: You can assign a profile to each user.
+	  In the profile you can
+		check for RADIUS attributes (reject if wrong or not present)
+		assign values to RADIUS attributes (send with Auth Success)
+		decide what attributes to log
+	  The plan is to make these values variable, when there will be
+	  LDAP integration in the far future.
+	- new accounting implementation, please adjust "accounting" section
+	  like example in Freeradius/accounting (note '%Z' at end of line)
+  * Web interface
+	- Wizards for
+		+ assigning users/devices/accounts in one step
+		+ first steps
+		+ importing CSV file with users/devices/accounts
+	- graphical buttons; 
+	  if you don't like it, switch it off with $SHOW_BUTTONS in config.php
+	- POST instead of GET for changing settings (add, delete, etc.)
+	- about page
+  * as always some minor changes ...
+
+Version 0.6
+  * Functionality:
+	- check of duplicate or empty values for user, RADIUS client, device
+	- interactive help for PIN, secret and other form fields
+	  If you don't like it, you can disable it in config.php.
+	- helpdesk users cannot see secrets in device list 
+	- new flag "$SHOW_PIN" in config.php to set, who can see the PIN
+	  via Web interface. Of course database contains all PINs and they
+	  are not secured crytographically.
+  * Database: increased PIN length in database to 8 bytes 
+	(because of Android client supports up to 7 digits, standard still 4)
+	see Setup/MySQL/migrate_0.5-0.6.sql for automatic conversion of database
+	There is no need to change database, if everything is working fine.
+  * Update script
+	It's the first version, so please backup before running.
+	You need the "patch" command, which is not on prior VMware versions
+  * openSUSE image
+	- Command for sending HUP to Freeradius for reloading, i.e. changes
+	  immediatelly take effect
+
+Version 0.5
+  * for updating from older versions, please note, that timezone
+	settings changed sign (+/-). Please change all timezone settings
+	or resync the devices using new function.
+  * new features:
+	page for syncing device
+  * small changes;
+	display/edit of accounts more like users/devices
+	better next/prev links for logs
+
+Version 0.4
+  * supports secrets with 32 bytes. 
+	(for migration from older versions, please convert database using
+	command in Setup/migrate_0.3.x-0.4.x.sql)
+  * small improvements:
+	reports number of locked users/tokens on start page
+	shows real time for last device usage
+	shows last login of user in list
+	filters for user/device status and user role
+	logs client (RADIUS, Web)
+	indexes for log tables
+  * bug fixes:
+	filter for secrets
+  * new features:
+	RADIUS accounting
+
+Version 0.3.2
+  * new builds (ISO and VMware) based on openSUSE 11.3
+
+Version 0.3.1 (changes to ISO and VMware only)
+  * limited access to phpmyadmin to root only
+  * purged keys for ssh and freeradius (automatic creation at first boot)
+
+Version 0.3
+  * a little beautification ...
+  * short help messages in web gui
+
+Version 0.2
+  * added functionality for static (temporary) passwords
+
+Version 0.1
+  * first version
+

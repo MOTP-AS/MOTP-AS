@@ -1,0 +1,91 @@
+
+INSTALLATION of MOTP-AS
+=======================
+
+
+PREREQUISITES
+-------------
+
+You need this software installed:
+* MySQL
+* Apache
+* PHP
+* FreeRadius 
+
+
+
+INSTALLATION
+------------
+
+1. Change default username/passwords for database access:
+	- Setup/MySQL/motp_schema.sql
+	- Setup/config.php
+
+2. Create SQL database
+	You can create the database by loading the setup script:
+		mysql -u root -p  < Setup/MySQL/motp_schema.sql
+	This script will 
+		- create a database "motp"
+		- create all needed tables in the database "motp"
+		- create an db user "motp" with access to db "motp"
+		- add user "admin" with static password "motp"
+	If you would like to use a different database name, etc.,
+	please edit Setup/config.php
+
+3. Install PHP files
+	Copy all files in directory HTML (including directories) to 
+	your html root.
+
+4. FreeRadius
+	Locate your Freeradius config directory (mostly /etc/raddb),
+	back up your config files and replace them as described below. 
+	After changing, please reload freeradius.
+
+    a) Authentication
+	Replace config file "users" by "Setup/Freeradius/users", 
+	change paths in "users" to your php binary and html root, respectively. 
+	Please verify, that the "exec" module is enabled in "post-auth"
+	section, otherwise all requests will be authenticated!
+
+    b) RADIUS clients
+	If you do not want to manage your RADIUS clients with MOTP-AS,
+	please skip the following steps.
+	For managing RADIUS clients, the method depends on your freeradius 
+	version: With older versions you have to change "clients.conf", 
+	with version 2.1 or newer you can configure freeradius to use 
+	dynamic clients.
+
+	For dynamic clients copy "Setup/FreeRadius/dynamic-clients" 
+	to "sites-enabled" of your config directory and change paths in 
+	"dynamic-clients" (php binary and html root). Freeradius then 
+	accepts all clients configured with MOTP-AS.
+
+	For older versions MOTP-AS can generate the file "clients.conf" 
+	automatically, if
+		- you uncomment and set  RADIUS_CONF_CLIENTS in config.php
+		- the apache user (nobody?) has write access to "clients.conf"
+	Attention: MOTP-AS will not import existing entries in "clients.conf",
+	it will instead override the file.
+	After every change of "clients.conf" freeradius must be reoladed.
+	MOTP-AS can reload freeradius after writing clients.conf:
+		- uncomment and set RADIUS_SERV_RELOAD in config.php
+		- the apache user need the rights to execute this command.
+
+    c) Accounting
+	replace "accounting" section of "sites-enabled/default" by content
+	of file "accounting". Don't forget to change paths.
+
+
+CONFIGURATION
+-------------
+
+ - Login to http://your.server/
+	Username: admin
+	Password: motp
+
+ - Change admin's Password:
+	=> ADMINISTRATION
+	=> USERS
+	=> admin
+	=> static password
+

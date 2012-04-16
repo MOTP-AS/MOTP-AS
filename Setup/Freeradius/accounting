@@ -1,0 +1,8 @@
+accounting {
+
+	if ("logged" == `/usr/bin/php /var/www/htdocs/radius-acct.php %{User-Name} %{Acct-Status-Type} Client-Shortname = %{Client-Shortname}\t%Z`) {
+		ok
+	}
+
+}
+

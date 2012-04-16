@@ -1,0 +1,40 @@
+
+Please note following differences in functionality between versions 0.6 and 0.7:
+
+ * Characters of usernames are checked now. If a username contains an invalid
+   character, it will be rejected.
+   Default valid characters are A-Z, a-z, 0-9, '-', '_' and '.'
+   You can modify the allowed characters by setting $VALID_CHARS in config.php
+
+ * The script for authentication requests now checks, if it was invoken with
+   at least three paramters (Username, Password, Client-Shortname). If not,
+   it will deny the requests.
+   Please check, that your Freeradius configuration sets these values.
+   For an example see file 'Setup/Freeradius/users'.
+
+ * The allowed time difference between device and server is now decreased 
+   to +/- 3 minutes by default.
+   You may modify this value by changing $MAXDIFF in config.php.
+
+   Please note, that the server remembers the drift, and it can exceed this
+   value over time. This setting therefore means the difference to the last
+   successful authentication.
+
+ * RADIUS attributes of authentication requests can now be checked:
+	a) if a RADIUS attribute is set
+	b) if the RADIUS attribute has a defined value
+   If this check fails, the authentication fails also without any notice to
+   the user (RADIUS client), why the authentication failed.
+
+ * If authentication was sucessful, the server now adds RADIUS attributes
+   to the Reply. By default it replies with
+	Reply-Message = Hello Friend!
+   (This is not true for an update, only for new installations.)
+
+   Please check, that the reply attributes don't confuse your RADIUS client.
+   You may delete or change this attribute, as well as add other attributes.
+
+ * The script for accounting was changed, that means you have to change
+   your Freeradius configuration, if you use it.
+   Please see 'Setup/Freeradius/accouting' as example.
+

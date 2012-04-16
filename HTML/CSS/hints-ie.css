@@ -1,0 +1,13 @@
+
+.hint {
+	display: none;
+	min-height: 1em;
+	height: auto;
+	float: left;
+}
+
+.hint-arrow {
+	width: 0px;
+	height: 0px;
+}
+

@@ -1,0 +1,406 @@
+*{
+        padding: 0;
+        margin: 0;
+        font: Geneva,Arial,Helvetica,sans-serif;
+}
+
+A:link {
+        text-decoration: none;
+        color: black
+}
+
+A:visited {
+        text-decoration: none;
+        color: black
+}
+
+A:active {
+        text-decoration: none;
+        color: black
+}
+
+A:hover {
+        text-decoration: none;
+}
+
+a img {
+        border: none
+}
+
+body {
+        text-align: center;
+        overflow-y: auto;
+        width:100%;
+        font: 12px 'Lucida Grande', LucidaGrande, Lucida, Helvetica, Arial, sans-serif;
+        background-color: #f5f5f5;
+
+}
+
+#loginbody {
+    background-color: #ffffff;
+}
+
+div#container {
+        margin: 10px auto 10px auto;
+        border: 1px solid #c6c6c6;
+        width: 80%;
+        background-color: #ffffff;
+}
+
+div#headerleft {
+        width: 60%;
+        float: left;
+        display: block;
+        height: 100%;
+}
+
+div#headerleft span {
+        display: block;
+        float: left;
+        padding: 2px 10px;
+}
+
+div#headerleft-elements{
+        text-align: left;
+        width: 100%;
+        display: block;
+        float: right;
+        background-color: #ffffff;
+        border: 0px solid black;
+        height: 25%;
+}
+
+div#headerright {
+        width: 40%;
+        float: left;
+        display: block;
+        position: relative;
+        height: 100%;
+        background: url('../IMG/header.jpg') no-repeat right;
+}
+div#headerright-element {
+/*        margin-top: 53px; */
+        position: absolute;
+        bottom: 0px;
+        left: 0px;
+        width: 100%;
+        float: left;
+        text-align: right;
+        height: 33.3%;
+}
+
+div#header {
+/*    margin-top: 40px; */
+    height: 100px;
+    background-color: #ffffff;
+}
+
+div#menubox {
+    height: 22px;
+    width: 100%;
+    border-top: 1px solid #ca0002;
+    border-bottom: 1px solid #ca0002;
+    text-align: center;
+    background-color: #ffffff;
+}
+
+div#main {
+    float: left;
+    width: 100%;
+}
+
+div#data {
+    height: 100%;
+    text-align: left;
+    float: left;
+    margin: 10px;
+}
+
+div#help {
+    float: right;
+    padding: 5px;
+    margin: 10px;
+    background-color: #f4f4f4;
+    text-align: left;
+    height: 100%;
+    width: 30%;
+}
+
+div#help p {
+    padding: 5px;
+}
+
+div#footer {
+    border-top: 1px solid #ca0002;
+    height: 40px;
+    background-color: #ffffff;
+    clear: both;
+    padding: 3px 10px 0px 0px;
+}
+
+div#footer-info {
+    float: right;
+}
+
+div#bcs {
+    float: left;
+    font-size: 10px;
+    padding: 0px 0px 0px 8px;
+}
+
+div#error-box {
+    position: absolute;
+    left: 50%;
+    top: 0px;
+    width: 250px;
+    border: 1px solid;
+    margin: 0px 0px 0px -166px;
+    padding: 15px 10px 15px 50px;
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    color: #D8000C;
+    background-color: #ffbdbd;
+    background-image: url('../IMG/errorsign.jpg');
+}
+
+div.message {
+    background-repeat: no-repeat;
+    background-position: 5px;
+    padding: 15px 0 0 35px;
+    min-height: 30px;
+    height: 100%;
+}
+
+div.ok {
+    background-image: url('../IMG/good.png');
+}
+
+div.warning {
+    background-image: url('../IMG/warning.png');
+}
+
+div.error {
+    background-image: url('../IMG/error.png');
+}
+
+div#loginbox {
+    border:1px solid #bcbcbc;
+    width: 250px;
+    height: 100px;
+    position: absolute;
+    left: 50%;
+    margin-left: -125px;
+    top: 50%;
+    margin-top: -50px;
+    background-color: #f5f5f5;
+}
+
+table.list {
+	/* padding: 1em 1em 1em 1em; */
+	padding: 0 0 5px 0;
+	border-spacing: 0px;
+}
+table.list tr:nth-child(2n) {
+	background-color: #f4f4f4;
+}
+table.list tr:hover td {
+	background-color: #ffffe0;
+}
+table.list th {
+	padding: 2px 10px 2px 10px;
+}
+table.list td {
+	padding: 2px 10px 2px 10px;
+}
+
+table.show {
+	/* padding: 1em 1em 1em 1em; */
+	padding: 0 0 5px 0;
+        border-spacing: 0px;
+}
+table.show td {
+	padding: 2px 2px 2px 2px;
+	text-align: left;
+	vertical-align: top;
+}
+table.show tr:nth-child(2n+1) {
+	background-color: #f4f4f4;
+}
+
+table.grid th {
+	border: 1px solid white;
+	background-color: #f4f4f4;
+	padding: 6px;
+	text-align: left;
+}
+table.grid td {
+	border: 1px solid white;
+	background-color: #f4f4f4;
+	padding: 2px;
+}
+
+
+div#nav {
+	padding: 0px 0px 30px 30px;
+}
+
+div#nav span {
+	/* font-weight: bold; */
+}
+
+div#loginbox table {
+    position: relative;
+    margin: auto;
+    height: 40px;
+    top:50%;
+    margin-top: -35px;
+}
+
+div#loginbox table input {
+    border: 1px solid #bcbcbc;
+    background-color: #ffffff;
+    width: 150px;
+    font-size: small;
+}
+
+div#loginbox table input#submit {
+    margin-top: 5px;
+    width: 50px;
+    height: 20px;
+    float: none;
+}
+
+
+div#loginlogo {
+    background: url(../IMG/header.jpg);
+    position: absolute;
+    top:20px;
+    left:20px;
+    width: 250px;
+    height: 80px;
+}
+
+div#dataframe {
+    padding: 2% 0% 2% 4%;
+}
+
+div#databox {
+    width: 90%;
+    height: 90%;
+    text-align: center;	
+    margin: auto;
+}
+
+div#col1 th{
+    width: 10%;
+    background-color: #bcbcbc;
+    margin: 5px;
+}
+
+div#col2 {
+	width: 100%;
+	display: block;
+	padding-top: 20px;
+}
+
+
+a {
+	color: #ca0002 !important;
+}
+a:hover {
+	background-color: #ca0002 !important;
+	color: #ffffff !important;
+}
+
+div.add {
+	width: 10%;
+	float: left;
+}
+
+div.search {
+	width: 70%;
+	float: left;
+}
+
+div#inv input.submit, div#inv input, table tbody tr td input, input {
+	border: 1px solid #bcbcbc;
+    	background-color: #ffffff;
+    	font: smaller Verdana, Courier, monospace;
+	height: 20px;
+	vertical-align: middle;
+}
+
+div#inv input {
+	height: 18px;
+
+}
+
+.button {
+	padding-right: 6px;
+	float: left;
+}
+.button input {
+	margin-bottom: 0px !important;
+	border: 0px;
+	height: auto;
+	width: auto;
+}
+.button div {
+	margin-top: -1px;
+	margin-left: 2px;
+	clear: left;
+	font-size: smaller;
+}
+
+.submit {
+	float: left;
+	margin: 0px;
+}
+
+div#inv {
+	height: 30px;
+	display: block;
+	width:50%;
+	text-align: center;
+	margin: 0 auto;
+}
+
+h1 {
+	text-align: center;
+	padding: 1em 1em 1em 1em;
+}
+
+.stat {
+	text-align: center;
+	padding-bottom: 20px;
+}
+.stat div {
+	text-decoration: underline;
+	padding-bottom: 2px;
+	font-size: larger;
+}
+.stat ul {
+	margin-left: -5px;
+}
+.stat li {
+	display: block;
+}
+
+div#data form {
+	/* padding: 0em 1em 0em 1em; */
+}
+div#data form input {
+	 margin: 2px; 
+}
+div#data form select {
+	 margin: 2px; 
+}
+
+ol,ul,dl {
+	padding: 5px;
+	margin-left: 25px;
+}
+.text li {
+	padding: 3px;
+}
+

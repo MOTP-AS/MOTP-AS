@@ -1,0 +1,47 @@
+client dynamic {
+	ipaddr = 0.0.0.0
+	netmask = 0
+	dynamic_clients = dynamic_client_server
+	lifetime = 600
+}
+client dynamic {
+	ipv6addr = ::
+	netmask = 0
+	dynamic_clients = dynamic_client_server6
+	lifetime = 600
+}
+
+server dynamic_client_server {
+	authorize {
+		update control {
+			FreeRADIUS-Client-IP-Address = "%{Packet-Src-IP-Address}"
+			FreeRADIUS-Client-Require-MA = no
+			FreeRADIUS-Client-NAS-Type = "other"
+		}
+		if (`/usr/bin/php /var/www/htdocs/radius-client.php secret %{Packet-Src-IP-Address}` != "unknown") {
+			update control {
+				FreeRADIUS-Client-Secret = `/usr/bin/php /var/www/htdocs/radius-client.php secret %{Packet-Src-IP-Address}`
+				FreeRADIUS-Client-Shortname = `/usr/bin/php /var/www/htdocs/radius-client.php shortname %{Packet-Src-IP-Address}`
+			}
+			ok
+		}
+	}
+}
+
+server dynamic_client_server6 {
+	authorize {
+		update control {
+			FreeRADIUS-Client-IPv6-Address = "%{Packet-Src-IPv6-Address}"
+			FreeRADIUS-Client-Require-MA = no
+			FreeRADIUS-Client-NAS-Type = "other"
+		}
+		if (`/usr/bin/php /srv/www/htdocs/radius-client.php secret %{Packet-Src-IPv6-Address}` != "unknown") {
+			update control {
+				FreeRADIUS-Client-Secret = `/usr/bin/php /srv/www/htdocs/radius-client.php secret %{Packet-Src-IPv6-Address}`
+				FreeRADIUS-Client-Shortname = `/usr/bin/php /srv/www/htdocs/radius-client.php shortname %{Packet-Src-IPv6-Address}`
+			}
+			ok
+		}
+	}
+}
+

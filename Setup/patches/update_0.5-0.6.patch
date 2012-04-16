@@ -1,0 +1,660 @@
+diff -Nur MOTP-AS_v0.5/HTML/account.php MOTP-AS_v0.6/HTML/account.php
+--- MOTP-AS_v0.5/HTML/account.php	2010-11-01 17:37:50.000000000 +0100
++++ MOTP-AS_v0.6/HTML/account.php	2010-11-23 23:05:34.000000000 +0100
+@@ -50,6 +50,7 @@
+ 
+ 	if ($accountid==0) {
+ 		$account=insert_account ($account);
++		if (! $account) stop("error", "Could not add account.");
+ 		$accountid=$account->id;
+ 		log_audit($_SESSION['user'],"account add","Account: $account->id ($account->userid, $account->deviceid)");
+ 		$bcs[3] = array("account.php?account=$accountid","$account->user/$account->device");
+@@ -80,8 +81,9 @@
+ 
+ 	echo table_header( FALSE, "edit");
+ 	echo table_row( array( "User:", $userselect ) );
++	$pin = show_data( $SHOW_PIN, $account->pin, "", $account->user, $_SESSION['user'], get_user_role($account->user), $role);
+ 	echo table_row( array( "PIN:", 
+-		input_text("pin", ($_SESSION['user'] == $account->user) ? $account->pin : "", 4) ) );
++		input_text("pin", $pin, 4, 'id="account-pin"') ) );
+ 	echo table_row( array( "Device:", $deviceselect ) );
+ 
+ 	echo table_footer();
+@@ -93,14 +95,15 @@
+ 		. p("PIN = PIN used by user. Existing PINs are only displayed if managing own accounts")
+ 		. p("device = device (secret) for this account")
+ 		;
+-
++	$hint = TRUE;
+ 
+ } else {
+ 	/* show account data */
+ 
+ 	echo table_header(FALSE,"show");
+ 	echo table_row( array( "User:",   a("user.php?user=$account->userid", $account->user) ));
+-	echo table_row( array( "PIN:", ($_SESSION['user'] == $account->user) ? $account->pin : "****" ));
++	$pin = show_data( $SHOW_PIN, $account->pin, "****", $account->user, $_SESSION['user'], get_user_role($account->user), $role);
++	echo table_row( array( "PIN:", $pin ));
+ 	echo table_row( array( "Device:", a("device.php?device=$account->deviceid" , ($account->device=="") ? "Device #".$account->deviceid : $account->device  )));
+ 	echo table_footer();
+ 
+diff -Nur MOTP-AS_v0.5/HTML/CSS/hints.css MOTP-AS_v0.6/HTML/CSS/hints.css
+--- MOTP-AS_v0.5/HTML/CSS/hints.css	1970-01-01 01:00:00.000000000 +0100
++++ MOTP-AS_v0.6/HTML/CSS/hints.css	2010-11-23 23:05:35.000000000 +0100
+@@ -0,0 +1,26 @@
++
++.hint {
++	display: none;
++	height: 1em;
++	float: left;
++}
++
++.hint div {
++	margin-left: 20px;
++	padding: 5px;
++	border: 1px solid #f4f4f4;
++	background-color: #ffffe0;
++}
++
++.hint div ul {
++	margin-left: 30px;
++}
++
++.hint-arrow {
++	background: url(/IMG/arrow.png) left top no-repeat;
++	width: 10px;
++	height: 19px;
++	float: left;
++	margin-left: -15px;
++}
++
+diff -Nur MOTP-AS_v0.5/HTML/CSS/hints-ie.css MOTP-AS_v0.6/HTML/CSS/hints-ie.css
+--- MOTP-AS_v0.5/HTML/CSS/hints-ie.css	1970-01-01 01:00:00.000000000 +0100
++++ MOTP-AS_v0.6/HTML/CSS/hints-ie.css	2010-11-23 23:05:35.000000000 +0100
+@@ -0,0 +1,13 @@
++
++.hint {
++	display: none;
++	min-height: 1em;
++	height: auto;
++	float: left;
++}
++
++.hint-arrow {
++	width: 0px;
++	height: 0px;
++}
++
+diff -Nur MOTP-AS_v0.5/HTML/CSS/layout.css MOTP-AS_v0.6/HTML/CSS/layout.css
+--- MOTP-AS_v0.5/HTML/CSS/layout.css	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/CSS/layout.css	2010-11-23 23:05:35.000000000 +0100
+@@ -122,7 +122,7 @@
+     background-color: #f4f4f4;
+     text-align: left;
+     height: 100%;
+-    width: 40%;
++    width: 30%;
+ }
+ 
+ div#help p {
+diff -Nur MOTP-AS_v0.5/HTML/device.php MOTP-AS_v0.6/HTML/device.php
+--- MOTP-AS_v0.5/HTML/device.php	2010-11-01 17:37:50.000000000 +0100
++++ MOTP-AS_v0.6/HTML/device.php	2010-11-23 23:05:34.000000000 +0100
+@@ -67,6 +67,7 @@
+ 
+ 	if ($devid==0) {
+ 		$device=insert_device ($device);
++		if (! $device) stop("error", "Could not add device. Possible reason: device name already existing.");
+ 		$devid=$device->id;
+ 		$bcs[3]=array("device.php?device=$devid",device_name($device));
+ 		log_audit($_SESSION['user'],"device add","Device: $device->id ($device->name)");
+@@ -82,8 +83,8 @@
+ 	echo form_header("post", "device.php?device=$devid&action=insert");
+ 	echo table_header(FALSE,"edit");
+ 	echo table_row( array ("Name:"  ,   input_text("name",     $device->name,   20 ) ));
+-	echo table_row( array ("Secret:",   input_text("secret",   $device->secret, 20 ) ));
+-	echo table_row( array ("Timezone:", input_text("timezone", $device->timezone,3 ) ));
++	echo table_row( array ("Secret:",   input_text("secret",   $device->secret, 20, 'id="device-secret"' ) ));
++	echo table_row( array ("Timezone:", input_text("timezone", $device->timezone,3, 'id="device-tz"' ) ));
+ 	echo table_footer();	
+ 	echo input_submit("","Ok");
+ 	echo form_footer();
+@@ -92,6 +93,7 @@
+ 		. p("secret = secret generated at initialization of token. The pin is stored in account settings.")
+ 		. p("timezone = difference (in hours) between GMT and device's timezone. You can find mobile otp's \"epch time\" in the left corner of this web page")
+ 		;
++	$hint = TRUE;
+ 
+ } else {
+ 	/* show device data */
+diff -Nur MOTP-AS_v0.5/HTML/devices.php MOTP-AS_v0.6/HTML/devices.php
+--- MOTP-AS_v0.5/HTML/devices.php	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/devices.php	2010-11-23 23:05:34.000000000 +0100
+@@ -37,7 +37,7 @@
+ foreach ( $devices as $device ) {
+ 	echo table_row ( array (
+ 		a("device.php?device=$device->id", device_name($device) ) ,
+-		a("device.php?device=$device->id", $device->secret) ,
++		a("device.php?device=$device->id", ($role == 'A') ? $device->secret : "") ,
+ 		($device->enabled) ? "active" : "locked" ,
+ 		( ($device->lasttime) ? date("d.m.Y",10* $device->lasttime) : "never used" ) 
+ 	) );
+Files MOTP-AS_v0.5/HTML/IMG/arrow.png and MOTP-AS_v0.6/HTML/IMG/arrow.png differ
+Files MOTP-AS_v0.5/HTML/IMG/ok.png and MOTP-AS_v0.6/HTML/IMG/ok.png differ
+Files MOTP-AS_v0.5/HTML/IMG/warn.png and MOTP-AS_v0.6/HTML/IMG/warn.png differ
+diff -Nur MOTP-AS_v0.5/HTML/INC/config.php MOTP-AS_v0.6/HTML/INC/config.php
+--- MOTP-AS_v0.5/HTML/INC/config.php	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/INC/config.php	2010-11-23 23:05:35.000000000 +0100
+@@ -1,5 +1,8 @@
+ <?php
+ 
++$VERSION = "0.6";
++
++
+ /* access to DATABASE */
+ $mysql_server 	= 'localhost';	// db server
+ $mysql_db 	= 'motp';	// database
+@@ -17,11 +20,27 @@
+ 
+ 
+ /* RADIUS config */
+-// $RADIUS_CONF_CLIENTS = "/etc/freeradius/clients.conf";	// config file for radius clients
+-// $RADIUS_SERV_RELOAD  = "sudo /etc/init.d/freeradius reload";	// command for reloading freeradius
++// $RADIUS_CONF_CLIENTS = "/etc/freeradius/clients.conf";
++			// config file for radius clients
++			// only uncomment for Freeradius without dynamic client support!
++// $RADIUS_SERV_RELOAD  = "sudo /etc/init.d/freeradius reload";	
++			// command for reloading freeradius
+ 
+ 
+ /* Logs */
+ $LOGS_ROWS = 20;	// nr. of rows when showing logs
+ 
++
++/* Help */
++$SHOW_HELP = TRUE;	// whether to show help box
++$SHOW_HINT = TRUE;	// whether to show interactive hints
++
++
++/* what to show to whom */
++$SHOW_PIN = 'S';		// PIN in Account settings
++	//	'' = do not show
++	//	S = show it only to User (self)
++	//	A = show it to Administrators, too
++	//	H = show it to Helpdesk, but only if not data of Administrator or other Helpdesk
++
+ ?>
+diff -Nur MOTP-AS_v0.5/HTML/INC/db_func.php MOTP-AS_v0.6/HTML/INC/db_func.php
+--- MOTP-AS_v0.5/HTML/INC/db_func.php	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/INC/db_func.php	2010-11-23 23:05:35.000000000 +0100
+@@ -279,6 +279,12 @@
+ }
+ 
+ function insert_user ($user) {
++	if (! $user->user) return FALSE;
++	$query = "SELECT * FROM users WHERE user='$user->user' " ;
++	$result = mysql_query($query);
++	if ($result) $result = mysql_num_rows($result);
++	if ($result) return FALSE;
++
+ 	$query = "INSERT INTO users (user, name, role) "
+ 		. "VALUES  ('$user->user', '$user->name', '$user->role') "
+ 		;
+@@ -394,6 +400,13 @@
+ }
+ 
+ function insert_device ($device) {
++	if ($device->name) {
++		$query = "SELECT * FROM devices WHERE name='$device->name' " ;
++		$result = mysql_query($query);
++		if ($result) $result = mysql_num_rows($result);
++		if ($result) return FALSE;
++	}
++
+ 	$device->secret = scramble($device->secret);
+ 	$query = "INSERT INTO devices (name, secret, timezone) "
+ 		. "VALUES  ('$device->name', '$device->secret', '$device->timezone') "
+@@ -615,6 +628,12 @@
+ }
+ 
+ function insert_radclient ($client) {
++	if (! $client->name) return FALSE;
++	$query = "SELECT * FROM rad_clients WHERE name='$client->name' OR ip=INET_ATON('$client->ip')" ;
++	$result = mysql_query($query);
++	if ($result) $result = mysql_num_rows($result);
++	if ($result) return FALSE;
++
+ 	$query = "INSERT INTO rad_clients (name, secret, ip) "
+ 		. "VALUES  ('$client->name', '$client->secret', INET_ATON('$client->ip')) "
+ 		;
+diff -Nur MOTP-AS_v0.5/HTML/INC/footer.php MOTP-AS_v0.6/HTML/INC/footer.php
+--- MOTP-AS_v0.5/HTML/INC/footer.php	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/INC/footer.php	2010-11-23 23:05:35.000000000 +0100
+@@ -1,7 +1,8 @@
+       </div>
+ 
+ <?php
+-if (isset($help)) echo help($help) 
++if ( isset($help) && $SHOW_HELP ) echo help($help);
++if ( isset($hint) && $SHOW_HINT ) echo '<script type="text/javascript" src="JS/hints.js"></script>';
+ ?>
+ 
+     </div>
+@@ -12,7 +13,7 @@
+ echo bcs($bcs) 
+ ?>
+ 	<div id="footer-info">
+-<a href="http://motp-as.network-cube.de/">MOTP-AS</a> version 0.5  -  <a href="mailto:motp-as@network-cube.de">motp-as@network-cube.de</a>
++<a href="http://motp-as.network-cube.de/">MOTP-AS</a> version <?php echo $VERSION; ?>  -  <a href="mailto:motp-as@network-cube.de">motp-as@network-cube.de</a>
+ 	</div>
+     </div>
+     </div>
+diff -Nur MOTP-AS_v0.5/HTML/INC/misc.php MOTP-AS_v0.6/HTML/INC/misc.php
+--- MOTP-AS_v0.5/HTML/INC/misc.php	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/INC/misc.php	2010-11-23 23:05:35.000000000 +0100
+@@ -7,7 +7,7 @@
+ }
+ 
+ function stop ($class, $string) {
+-	global $bcs;
++	global $bcs, $VERSION;
+ 	if ($string != "") echo "<div class=\"$class\">" . $string . "</div>";
+ 	include 'INC/footer.php';
+ 	exit;
+@@ -36,6 +36,34 @@
+ 	return $device->name . " (" . $device->id . ")" ;
+ }
+ 
++
++function show_data ( $config = '', $secret = "", $fill = "", $sel_user = "", $cur_user = "", $sel_role = '', $cur_role = '' ) {
++	switch ($config) {
++	   case '':		// dont show anything
++		return FALSE; 
++		break;
++	   case 'A': 		// administrators can see all data
++		if ($sel_user == $cur_user) return $secret;
++		if ($cur_role == 'A') return $secret;
++		return $fill;
++		break;
++	   case 'H':		// helpdesk can see user data
++		if ($sel_user == $cur_user) return $secret;
++		if ($cur_role == 'A') return $secret;
++		if ($cur_role == 'H') {
++			if ( ($sel_role == 'A') || ($sel_role == 'H') ) return $fill;
++			return $secret;
++		}
++		return $fill;
++		break;
++	   case 'S':
++		if ($sel_user == $cur_user) return $secret;
++		return $fill;
++		break;
++	}
++}
++
++
+ function warning ($string) {
+  	echo "<div id=\"error-box\">";
+  	echo $string;
+@@ -136,19 +164,17 @@
+ 	return "<input type=\"hidden\" name=\"$name\" value=\"$value\">\n";
+ }
+ 
+-function input_text ($name, $value, $size = 10, $ver = FALSE , $id = FALSE ) {
+-	$css = ""; if ($id) $css="$ver=\"$id\"";
+-	return "<input $css type=\"text\" name=\"$name\" value=\"$value\" size=\"$size\">\n";
++function input_text ($name, $value, $size = 10, $attr = "" ) {
++	return "<input $attr type=\"text\" name=\"$name\" value=\"$value\" size=\"$size\">\n";
+ }
+ 
+ function input_password ($name, $value, $size = 10) {
+ 	return "<input type=\"password\" name=\"$name\" value=\"$value\" size=\"$size\">\n";
+ }
+ 
+-function input_submit ($name, $value, $ver = FALSE , $id = FALSE ) {
+-	$css = ""; if ($id) $css="$ver=\"$id\"";
++function input_submit ($name, $value, $attr = "" ) {
+ 	if ($name != "") $name="name=\"$name\"";
+-	return "<input $css type=\"submit\" $name value=\"$value\">\n";
++	return "<input $attr type=\"submit\" $name value=\"$value\">\n";
+ }
+ 
+ function select_header ($name, $css = "") {
+@@ -174,3 +200,4 @@
+ function div_footer () {
+ 	return "</div>\n";
+ }
++
+diff -Nur MOTP-AS_v0.5/HTML/INC/rad_save.php MOTP-AS_v0.6/HTML/INC/rad_save.php
+--- MOTP-AS_v0.5/HTML/INC/rad_save.php	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/INC/rad_save.php	2010-11-23 23:05:35.000000000 +0100
+@@ -13,11 +13,8 @@
+ ***/
+ 
+ 
+-function rad_save () {
+-	global $RADIUS_CONF_CLIENTS, $RADIUS_SERV_RELOAD;
+-
+-
+-	/* write config file */
++function rad_save_write () {
++	global $RADIUS_CONF_CLIENTS;
+ 
+ 	if ( !isset($RADIUS_CONF_CLIENTS) || ($RADIUS_CONF_CLIENTS == "") ) return;
+ 
+@@ -40,8 +37,11 @@
+ 		$entry = "client $rclient->ip {\n\tsecret = $rclient->secret\n\tshortname = $rclient->name\n}\n\n";
+ 		fwrite ($fp, $entry);
+ 	}
++}
+ 
+ 
++function rad_save_reload () {
++	global $RADIUS_SERV_RELOAD;
+ 	/* reload freeradius */
+ 
+ 	if ( !isset($RADIUS_SERV_RELOAD) || ($RADIUS_SERV_RELOAD == "") ) return;
+@@ -49,4 +49,10 @@
+ 	exec($RADIUS_SERV_RELOAD);
+ }
+ 
++
++function rad_save () {
++	rad_save_write();
++	rad_save_reload();
++}
++
+ ?>
+diff -Nur MOTP-AS_v0.5/HTML/JS/hints.js MOTP-AS_v0.6/HTML/JS/hints.js
+--- MOTP-AS_v0.5/HTML/JS/hints.js	1970-01-01 01:00:00.000000000 +0100
++++ MOTP-AS_v0.6/HTML/JS/hints.js	2010-11-23 23:05:35.000000000 +0100
+@@ -0,0 +1,180 @@
++
++document.write(
++	  '<link href="CSS/hints.css" rel="stylesheet" type="text/css"/>'
++	+ '<!--[if IE]>'
++	+   '<link href="CSS/hints-ie.css" rel="stylesheet" type="text/css"/>'
++	+ '<![endif]-->'
++);
++
++function activate ( id, checks, checkfunc, helptext ) {
++	var elem = document.getElementById(id);
++	html =    '<div class="hint" id="hint-' + id + '">'
++		+  '<div>'
++		+    '<span class="hint-arrow"></span>'
++		+    '<ul>'
++		+       checks 
++		+    '</ul>'
++		+  '</div>'
++		+ '</div>'
++		;
++	// html = elem.outerHTML + html;
++	// elem.outerHTML = html;
++	var ne = document.createElement("span");
++	ne.innerHTML = html;
++	elem.parentNode.appendChild(ne);
++
++	elem = document.getElementById(id);
++	elem.style.cssFloat = "left";
++
++	elem.onfocus  = function () { hint(id,helptext); };
++	elem.onblur   = function () { unhint(id); };
++	unhint(id);
++
++	if (checkfunc) {
++		// elem.onchange = checkfunc;
++		elem.onkeyup  = checkfunc;
++		checkfunc();
++	}
++}
++
++var defaulthelp = false;
++
++function hint ( id, helptext ) {
++	id = "hint-" + id;
++	document.getElementById(id).style.display = "block";
++	var help = document.getElementById("help");
++	if ( help && helptext ) {
++		if (! defaulthelp) {
++			defaulthelp = help.innerHTML;
++			help.style.height = help.offsetHeight - 10;
++		}
++		help.innerHTML = helptext;
++	}
++}
++
++function unhint ( id ) {
++	id = "hint-" + id;
++	document.getElementById(id).style.display = "none";
++	if (defaulthelp) {
++		document.getElementById("help").innerHTML = defaulthelp;
++	}
++}
++
++
++function imgurl ( img ) { 
++	return "url(/IMG/" + img + ".png)";
++}
++
++
++
++/********* device secret **********************/
++
++if (document.getElementById("device-secret")) {
++	var html = '<li id="s1">16 or 32 characters</li>'
++		 + '<li id="s2">hex characters</li>'
++	;
++	var checkfunc = function () {
++		var value = document.getElementById("device-secret").value;
++
++		var img = "warn";
++		if ( (value.length == 16) || (value.length == 32) )
++			img = "ok";
++		document.getElementById("s1").style.listStyleImage = imgurl(img);
++
++		var img = "warn";
++		if ( value.match(/^[0-9a-fA-F]*$/g) )
++			img = "ok";
++		document.getElementById("s2").style.listStyleImage = imgurl(img);
++	};
++	var text = '<p>The device secret normally consists of 16 hex characters. Some implementations use 32 characters.</p>'
++		 + '<p>MOTP-AS supports up to 32 characters.</p>'
++		 ;
++	activate("device-secret",html,checkfunc,text);
++}
++
++
++
++/********* account pin **********************/
++
++if (document.getElementById("account-pin")) {
++	var html = '<li id="p1">4 digits</li>'
++		 + '<li id="p2">only digits</li>'
++	;
++	var checkfunc = function () {
++		var value = document.getElementById("account-pin").value;
++
++		var img = "warn";
++		if (value.length == 4)
++			img = "ok";
++		document.getElementById("p1").style.listStyleImage = imgurl(img);
++
++		var img = "warn";
++		if ( value.match(/^[0-9]*$/g) )
++			img = "ok";
++		document.getElementById("p2").style.listStyleImage = imgurl(img);
++	};
++	var text = '<p>The default MOTP implementation uses 4 digits as PIN. A few MOTP clients support more than 4 digits.</p>'
++		 + '<p>MOTP-AS supports up to 8 characters (digits or small letters) as PIN.</p>'
++		 ;
++	activate("account-pin",html,checkfunc,text);
++}
++
++
++/********* RADIUS IP **********************/
++
++function checkip (ip) {
++	if (ip == "0.0.0.0") return false;
++	if (ip == "255.255.255.255") return false;
++	var pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
++	var octets = ip.match(pattern);
++	if (octets == null) return false;
++	for (i = 0; i < 4; i++) {
++		if (octets[i] > 255) return false;
++   	}
++	return true;
++}
++
++if (document.getElementById("radius-ip")) {
++	var html = '<li id="i1">Valid IP address</li>'
++	;
++	var checkfunc = function () {
++		var value = document.getElementById("radius-ip").value;
++
++		var img = "warn";
++		if (checkip(value)) img = "ok";
++		document.getElementById("i1").style.listStyleImage = imgurl(img);
++
++	};
++	var text = false;
++	activate("radius-ip",html,checkfunc,text);
++}
++
++
++/********* device timezone **********************/
++
++function checktz (tz) {
++	if (tz.NaN) return false;
++	if ( (tz>14) || (tz<-12) ) return false;
++	if (tz != Math.floor(tz)) return false;
++	return true;
++}
++
++if (document.getElementById("device-tz")) {
++	var html = '<li id="t1">Timezone as hours to UTC</li>'
++	;
++	var checkfunc = function () {
++		var value = document.getElementById("device-tz").value;
++
++		var img = "warn";
++		if (checktz(value)) {
++			img = "ok";
++		}
++		document.getElementById("t1").style.listStyleImage = imgurl(img);
++
++	};
++	var text = false;
++	activate("device-tz",html,checkfunc,text);
++}
++
++
++
+diff -Nur MOTP-AS_v0.5/HTML/login.php MOTP-AS_v0.6/HTML/login.php
+--- MOTP-AS_v0.5/HTML/login.php	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/login.php	2010-11-23 23:05:35.000000000 +0100
+@@ -49,7 +49,7 @@
+ echo form_header("post", "login.php");
+ echo table_row ( array ("Username:", input_text("username","")), "0");
+ echo table_row ( array ("Password:", input_password("password","")), "0");
+-echo table_row ( input_submit("","Login","id","submit"), "2");
++echo table_row ( input_submit("","Login","id=\"submit\""), "2");
+ echo form_footer();
+ echo table_footer();
+ echo div_footer(); 
+diff -Nur MOTP-AS_v0.5/HTML/logs.php MOTP-AS_v0.6/HTML/logs.php
+--- MOTP-AS_v0.5/HTML/logs.php	2010-11-01 17:37:51.000000000 +0100
++++ MOTP-AS_v0.6/HTML/logs.php	2010-11-23 23:05:34.000000000 +0100
+@@ -38,7 +38,7 @@
+ echo table_header( array( "Time", "User", "Type", "Message" ), "list" );
+ 
+ echo table_row ( array (
+-	input_text ("start", $start, 14, "id", "from") . $from . br() . input_text ("end", $end, 14, "id", "to") . $to ,
++	input_text ("start", $start, 14, "id=\"from\"") . $from . br() . input_text ("end", $end, 14, "id=\"to\"") . $to ,
+ 	input_text ("user", $search->user, 10), 
+ 	input_text ("type", $search->type, 15), 
+ 	input_text ("message", $search->message, 30), 
+diff -Nur MOTP-AS_v0.5/HTML/radclient.php MOTP-AS_v0.6/HTML/radclient.php
+--- MOTP-AS_v0.5/HTML/radclient.php	2010-11-01 17:37:50.000000000 +0100
++++ MOTP-AS_v0.6/HTML/radclient.php	2010-11-23 23:05:34.000000000 +0100
+@@ -50,6 +50,7 @@
+ 
+ 	if ($clientid==0) {
+ 		$client=insert_radclient ($client);
++		if (! $client) stop("error", "Could not add client. Possible reasons: no name given, name already existing, no IP address, duplicate IP address.");
+ 		$clientid=$client->id;
+ 		log_audit($_SESSION['user'],"radclient add","Client: $client->name ($client->ip)");
+ 	} else {
+@@ -65,13 +66,26 @@
+ if ( ($action == "add") || ($action == "edit") ) {
+ 
+ 	echo form_header("post",  "radclient.php?client=" . $clientid . "&action=insert");
+-	echo "Name: "   . input_text("name",   $client->name)   . br() ;
+-	echo "Secret: " . input_text("secret", $client->secret) . br() ;
+-	echo "IP: "     . input_text("ip",     $client->ip)     . br() ;
++
++	echo table_header( FALSE, "edit");
++
++	echo table_row( array( "Name: ",   input_text("name",   $client->name, 15)   ) ) ;
++	echo table_row( array( "Secret: ", input_text("secret", $client->secret, 15) ) ) ;
++	echo table_row( array( "IP: ",     input_text("ip",     $client->ip, 15, 'id="radius-ip"') ) ) ;
++
++	echo table_footer();
++
+ 	echo input_submit("", "Ok");
+ 	echo form_footer();
++
+ 	if ($action=="edit") $bcs[3]=array("radclient.php?client=$clientid","$client->name");
+ 
++        $help   = p("name = name, only used to distinguish RADIUS clients")
++                . p("secret = RADIUS shared secret")
++                . p("ip = IP address of RADIUS client")
++                ;
++	$hint = TRUE;
++
+ } else {
+ 	/* show data */
+ 
+diff -Nur MOTP-AS_v0.5/HTML/self.php MOTP-AS_v0.6/HTML/self.php
+--- MOTP-AS_v0.5/HTML/self.php	2010-11-01 17:37:50.000000000 +0100
++++ MOTP-AS_v0.6/HTML/self.php	2010-11-23 23:05:34.000000000 +0100
+@@ -62,13 +62,15 @@
+ 	$select .= select_footer();
+ 	echo table_row( array( "Changing PIN for Device: ", $select) ); 
+ 
+-	echo table_row( array( "Old PIN: ", input_text("oldpin", "") ) );
+-	echo table_row( array( "New PIN: ", input_text("newpin", "") ) );
++	echo table_row( array( "Old PIN: ", input_text("oldpin", "", 4) ) );
++	echo table_row( array( "New PIN: ", input_text("newpin", "", 4, 'id="account-pin"') ) );
+ 	echo table_footer();
+ 
+ 	echo input_submit("", "Ok");
+ 	echo form_footer();
+ 
++	$hint = TRUE;
++
+ } else {
+ 	/* show user data */
+ 
+diff -Nur MOTP-AS_v0.5/HTML/static.php MOTP-AS_v0.6/HTML/static.php
+--- MOTP-AS_v0.5/HTML/static.php	2010-11-01 17:37:50.000000000 +0100
++++ MOTP-AS_v0.6/HTML/static.php	2010-11-23 23:05:34.000000000 +0100
+@@ -63,7 +63,7 @@
+ 
+ echo table_header( FALSE, "edit");
+ echo table_row( array( "Password", input_text("password", "") ) ) ;
+-echo table_row( array( "Valid until", input_text("until", ($static->until==0) ? "unlimited" : $static->until , 14, "id", "cal" ) . $cal ) ) ;
++echo table_row( array( "Valid until", input_text("until", ($static->until==0) ? "unlimited" : $static->until , 14, "id=\"cal\"" ) . $cal ) ) ;
+ echo table_row( array( "Valid for ", input_text("howoften", ($static->howoften<0) ? "unlimited" : $static->howoften ) . "logins") ) ;
+ echo table_footer();
+ 
+diff -Nur MOTP-AS_v0.5/HTML/user.php MOTP-AS_v0.6/HTML/user.php
+--- MOTP-AS_v0.5/HTML/user.php	2010-11-01 17:37:50.000000000 +0100
++++ MOTP-AS_v0.6/HTML/user.php	2010-11-23 23:05:34.000000000 +0100
+@@ -62,6 +62,7 @@
+ 
+ 	if ($userid==0) {
+ 		$user=insert_user ($user);
++		if (! $user) stop("error", "Could not add user. Possible reasons: duplicate or empty user value.");
+ 		$userid=$user->id;
+ 		$bcs[3]=array("user.php?user=$userid","$user->user");
+ 		log_audit($_SESSION['user'],"user add","User: $user->user ($user->name)");

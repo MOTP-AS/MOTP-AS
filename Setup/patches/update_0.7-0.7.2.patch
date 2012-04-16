@@ -1,0 +1,1145 @@
+diff -Nur MOTP-AS_v0.7/HTML/account.php MOTP-AS_v0.7.2/HTML/account.php
+--- MOTP-AS_v0.7/HTML/account.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/account.php	2012-03-11 14:22:28.000000000 +0100
+@@ -27,7 +27,7 @@
+ 
+ if ($action == "delete") {
+ 	delete_account ($account);
+-	log_audit($_SESSION['user'],"account delete","Account: $account->id ($account->userid, $account->deviceid)");
++	log_audit($_SESSION['user'],"account delete","Account #$account->id: - User #$account->userid ($account->user), Device #$account->deviceid ($account->device)");
+ 	array_splice($bcs,2);
+ 	stop("ok", "Account deleted");
+ }
+@@ -49,11 +49,11 @@
+ 		$account=insert_account ($account);
+ 		if (! $account) stop("error", "Could not add account.");
+ 		$accountid=$account->id;
+-		log_audit($_SESSION['user'],"account add","Account: $account->id ($account->userid, $account->deviceid)");
++		log_audit($_SESSION['user'],"account add","Account #$account->id: - User #$account->userid ($account->user), Device #$account->deviceid ($account->device)");
+ 		$bcs[3] = array("account.php?account=$accountid","$account->user/$account->device");
+ 	} else {
+ 		update_account ($account);
+-		log_audit($_SESSION['user'],"account modify","Account: $account->id ($account->userid, $account->deviceid)");
++		log_audit($_SESSION['user'],"account modify","Account #$account->id: - User #$account->userid ($account->user), Device #$account->deviceid ($account->device)");
+ 	}
+ }
+ 
+@@ -105,7 +105,7 @@
+ 	echo table_row( array( "Device:", a("device.php?device=$account->deviceid" , ($account->device=="") ? "Device #".$account->deviceid : $account->device  )));
+ 
+ 	if ($action == "generate passcode") {
+-		log_audit($_SESSION['user'],"generate OTP", "Account: $account->id (User: $account->user, Device: " . ($account->device=="" ? $account->deviceid : $account->device) . ")" );
++		log_audit($_SESSION['user'],"generate OTP","Account #$account->id: User #$account->userid ($account->user), Device #$account->deviceid ($account->device)");
+ 		$device = get_device ($account->deviceid);
+ 		$passcode = substr( md5( intval((gmdate("U")+$device->timezone*3600)/10) . $device->secret . $account->pin ),0,6);
+ 		echo table_row( array( "Passcode: ", $passcode));
+@@ -114,7 +114,8 @@
+ 	echo table_footer();
+ 
+ 	echo form_header("POST", "account.php?account=$accountid") . input_hidden("action", "edit")   . input_submit("Edit", "edit")     . form_footer();
+-	echo form_header("POST", "account.php?account=$accountid") . input_hidden("action", "delete") . input_submit("Delete", "delete") . form_footer();
++	$warn = (WARN_DELETE) ? "Are you sure to delete account '$account->user/$account->device'?" : FALSE;
++	echo form_header("POST", "account.php?account=$accountid", $warn) . input_hidden("action", "delete") . input_submit("Delete", "delete") . form_footer();
+ 
+         if (GENERATE_PASSCODE) {
+ 		echo form_header("POST", "account.php?account=$accountid") . input_hidden("action", "generate passcode") . input_submit("Generate Passcode") . form_footer();
+diff -Nur MOTP-AS_v0.7/HTML/auth.php MOTP-AS_v0.7.2/HTML/auth.php
+--- MOTP-AS_v0.7/HTML/auth.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/auth.php	2012-03-11 14:22:28.000000000 +0100
+@@ -11,6 +11,11 @@
+ 		return FALSE;
+ 	}
+ 
++	if( $password == "" ) { 
++		log_auth ($user, "failure", "no password given" );
++		return FALSE;
++	}
++
+ 	if (check_static($user,$password,$radius)) {
+ 		log_auth ($user, "success", "Static Password, Client: " . ( $radius ? "$radius (RADIUS)" : $_SERVER['REMOTE_ADDR']." (Web)") );
+ 		return TRUE;
+diff -Nur MOTP-AS_v0.7/HTML/CSS/layout.css MOTP-AS_v0.7.2/HTML/CSS/layout.css
+--- MOTP-AS_v0.7/HTML/CSS/layout.css	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/CSS/layout.css	2012-03-11 14:22:28.000000000 +0100
+@@ -226,6 +226,19 @@
+ 	background-color: #f4f4f4;
+ }
+ 
++table.grid th {
++	border: 1px solid white;
++	background-color: #f4f4f4;
++	padding: 6px;
++	text-align: left;
++}
++table.grid td {
++	border: 1px solid white;
++	background-color: #f4f4f4;
++	padding: 2px;
++}
++
++
+ div#nav {
+ 	padding: 0px 0px 30px 30px;
+ }
+@@ -322,10 +335,21 @@
+ }
+ 
+ .button {
++	padding-right: 6px;
++	float: left;
++}
++.button input {
++	margin-bottom: 0px !important;
+ 	border: 0px;
+ 	height: auto;
+ 	width: auto;
+ }
++.button div {
++	margin-top: -1px;
++	margin-left: 2px;
++	clear: left;
++	font-size: smaller;
++}
+ 
+ .submit {
+ 	float: left;
+@@ -349,13 +373,14 @@
+ 	text-align: center;
+ 	padding-bottom: 20px;
+ }
+-
+ .stat div {
+ 	text-decoration: underline;
+ 	padding-bottom: 2px;
+ 	font-size: larger;
+ }
+-
++.stat ul {
++	margin-left: -5px;
++}
+ .stat li {
+ 	display: block;
+ }
+@@ -364,7 +389,10 @@
+ 	/* padding: 0em 1em 0em 1em; */
+ }
+ div#data form input {
+-	margin: 2px;
++	 margin: 2px; 
++}
++div#data form select {
++	 margin: 2px; 
+ }
+ 
+ ol,ul,dl {
+diff -Nur MOTP-AS_v0.7/HTML/CSS/menu.css MOTP-AS_v0.7.2/HTML/CSS/menu.css
+--- MOTP-AS_v0.7/HTML/CSS/menu.css	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/CSS/menu.css	2012-03-11 14:22:28.000000000 +0100
+@@ -18,7 +18,8 @@
+ 	/* float: left; */
+ }
+ ul.Menu ul{
+-	width:160.65px;
++	/* width:160.65px; */
++	width:130px;
+ }
+ ul.Menu li{
+ 	display:block;
+diff -Nur MOTP-AS_v0.7/HTML/db_tools.php MOTP-AS_v0.7.2/HTML/db_tools.php
+--- MOTP-AS_v0.7/HTML/db_tools.php	1970-01-01 01:00:00.000000000 +0100
++++ MOTP-AS_v0.7.2/HTML/db_tools.php	2012-03-11 14:22:28.000000000 +0100
+@@ -0,0 +1,105 @@
++<?php
++
++include 'INC/session.php'; checkrole("A","index.php");
++include 'INC/include.php';
++
++if (isset($_POST['action'])) $action=input($_POST['action']); else $action="";
++
++
++if ($action == "export") {
++	$filename = "motp_" . $_SERVER['SERVER_NAME'] . ".backup";
++	header("Content-Type: text/plain");
++	header("Content-Disposition: attachment; filename=\"$filename\"");
++	log_audit($_SESSION['user'],"backup export",input(implode(", ",$_POST['export'])));
++	foreach ($_POST['export'] as $export) {
++		switch($export) {
++		  case 'pref':
++			db_export("config");
++			break;
++		  case 'data':
++			db_export("users");
++			db_export("devices");
++			db_export("accounts");
++			db_export("static");
++			break;
++		  case 'rads':
++			db_export("rad_clients");
++			db_export("rad_profiles");
++			break;
++		  case 'logs':
++			db_export("log_auth");
++			db_export("log_acc");
++			db_export("log_audit");
++			break;
++		}
++	}
++	exit(0);
++}
++
++
++include 'INC/header.php';
++
++$bcs = array ( array("index.php","home"), array("db_tools.php","DB tools") );
++
++
++if ($action == "import") {
++
++	if (!array_key_exists('import',$_FILES)) stop("warning","no file uploaded.");
++	if ($_FILES['import']['name']=="") stop("warning","no file uploaded.");
++	if ($_FILES['import']['error']!=0) stop("error","Internal error.");
++	$file = $_FILES['import']['tmp_name']; 
++	if (($fp = fopen($file, "r")) === FALSE) stop("error","Internal error.");
++	echo "Importing ";
++	while (($line = fgets($fp)) !== FALSE) {
++		if ($line == "") continue;		// empty line
++		if ($line[0] == '#') continue;		// comment
++		if (!strstr($line,'=')) continue;	// no data
++		list($table,$data) = explode('=',$line,2);
++		$table=input($table);
++		if (db_import($table,$data)) echo ".";
++	}
++	fclose($fp);
++	// remove file???
++
++	log_audit($_SESSION['user'],"backup import",input($_FILES['import']['name']));
++	stop("ok","Backup imported.");	
++} 
++
++$warn = "Attention! If you upload the configuration all current data will be overwritten!\nARE YOU REALLY SURE TO PROCEED?";
++echo p(
++	table_header() . form_header("POST\" enctype=\"multipart/form-data", "db_tools.php", $warn)
++	. input_hidden("action","import")
++	. input_submit("Import")
++	. " old configuration: "
++	. input_hidden("MAX_FILE_SIZE", convertBytes(ini_get('upload_max_filesize')))
++	. input_file("import")
++	. form_footer() . table_footer()
++);
++echo p("<hr>");
++echo p(
++	form_header("POST", "db_tools.php")
++	. input_hidden("action","export")
++	. input_submit("Export")
++	. " current configuration:"
++	. div_header("","button")
++	. table_header()
++	. table_row( array( input_checkbox("export[]","data",TRUE) . " MOTP configuration: users/devices/accounts"))
++	. table_row( array( input_checkbox("export[]","rads",TRUE) . " RADIUS settings"))
++	. table_row( array( input_checkbox("export[]","pref",TRUE) . " preferences"))
++	. table_row( array( input_checkbox("export[]","logs")      . " log files"))
++	. table_footer()
++	. div_footer()
++	. form_footer()
++);
++
++
++$help = p("This Import/Export of current settings provides simple backup/restore functionality. For advanced database administration, please use phpMyAdmin.")
++	. li("ul",array(
++		array("Import", ": to upload files exported through this tools. <b>All existing settings will be overwritten!</b>"),
++		array("Export", ": export selected configuration into PHP serialized data.")
++	  ));
++
++
++include 'INC/footer.php';
++
++?>
+diff -Nur MOTP-AS_v0.7/HTML/device.php MOTP-AS_v0.7.2/HTML/device.php
+--- MOTP-AS_v0.7/HTML/device.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/device.php	2012-03-11 14:22:28.000000000 +0100
+@@ -38,19 +38,19 @@
+ if ($action == "lock") {
+ 	$device->enabled = FALSE;
+ 	update_device ($device);
+-	log_audit($_SESSION['user'],"device lock","Device: $device->id ($device->name)");
++	log_audit($_SESSION['user'],"device lock","Device #$device->id: $device->name");
+ }
+ 
+ if ($action == "reset") {
+ 	$device->enabled = TRUE;
+ 	$device->offset = 0;
+ 	update_device ($device);
+-	log_audit($_SESSION['user'],"device reset","Device: $device->id ($device->name)");
++	log_audit($_SESSION['user'],"device reset","Device #$device->id: $device->name");
+ }
+ 
+ if ($action == "delete") {
+ 	delete_device ($device);
+-	log_audit($_SESSION['user'],"device delete","Device: $device->id ($device->name)");
++	log_audit($_SESSION['user'],"device delete","Device #$device->id: $device->name");
+ 	array_splice($bcs,2);
+ 	stop("ok", "Device deleted");
+ }
+@@ -67,10 +67,10 @@
+ 		if (! $device) stop("error", "Could not add device: " . error_msg() );
+ 		$devid=$device->id;
+ 		$bcs[3]=array("device.php?device=$devid",device_name($device));
+-		log_audit($_SESSION['user'],"device add","Device: $device->id ($device->name)");
++		log_audit($_SESSION['user'],"device add","Device #$device->id: $device->name");
+ 	} else {
+ 		update_device ($device);
+-		log_audit($_SESSION['user'],"device modify","Device: $device->id ($device->name)");
++		log_audit($_SESSION['user'],"device modify","Device #$device->id: $device->name");
+ 	}
+ }
+ 
+@@ -89,7 +89,7 @@
+ 
+ 	$help   = p("name = name of device, can be empty") 
+ 		. p("secret = secret generated at initialization of token. The pin is stored in account settings.")
+-		. p("timezone = difference (in hours) between GMT and device's timezone. You can find mobile otp's \"epch time\" in the left corner of this web page")
++		. p("timezone = difference (in hours) between GMT and device's timezone. You can find mobile otp's \"epch time\" in the left corner of this web page. If both your mobile device and this server both use GMT, what should be the default, timezone equals 0.")
+ 		;
+ 	$hint = TRUE;
+ 
+@@ -114,8 +114,9 @@
+ 	echo form_header("POST", "device.php?device=$devid") . input_hidden("action", "lock" )   . input_submit("Lock", "lock")     . form_footer();
+ 	echo form_header("POST", "device.php?device=$devid") . input_hidden("action", "reset" )  . input_submit("Reset", "reset")   . form_footer();
+ 	echo form_header("POST", "device.php?device=$devid") . input_hidden("action", "edit" )   . input_submit("Edit", "edit")     . form_footer();
+-	echo form_header("POST", "device.php?device=$devid") . input_hidden("action", "delete" ) . input_submit("Delete", "delete") . form_footer();
+-	echo form_header("POST", "device.php?device=$devid") . input_hidden("action", "sync" )   . input_submit("Sync", "")         . form_footer();
++	$warn = (WARN_DELETE) ? "Are you sure to delete device '".device_name($device)."'?" : FALSE;
++	echo form_header("POST", "device.php?device=$devid", $warn) . input_hidden("action", "delete" ) . input_submit("Delete", "delete") . form_footer();
++	echo form_header("POST", "device.php?device=$devid") . input_hidden("action", "sync" )   . input_submit("Sync", "sync")     . form_footer();
+ 
+ 	$help   = p("lock = lock device") 
+ 		. p("reset = unlock device and set offset to 0")
+Files MOTP-AS_v0.7/HTML/IMG/add.png and MOTP-AS_v0.7.2/HTML/IMG/add.png differ
+Files MOTP-AS_v0.7/HTML/IMG/send.png and MOTP-AS_v0.7.2/HTML/IMG/send.png differ
+Files MOTP-AS_v0.7/HTML/IMG/static.png and MOTP-AS_v0.7.2/HTML/IMG/static.png differ
+Files MOTP-AS_v0.7/HTML/IMG/sync.png and MOTP-AS_v0.7.2/HTML/IMG/sync.png differ
+diff -Nur MOTP-AS_v0.7/HTML/INC/config.php MOTP-AS_v0.7.2/HTML/INC/config.php
+--- MOTP-AS_v0.7/HTML/INC/config.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/INC/config.php	2012-03-11 14:22:28.000000000 +0100
+@@ -1,6 +1,6 @@
+ <?php
+ 
+-$VERSION = "0.7";
++$VERSION = "0.7.2";
+ 
+ 
+ /* access to DATABASE */
+@@ -12,13 +12,6 @@
+ 				// (this is only a replacement of characters,
+ 				// no encryption!)
+ 
+-
+-/* MOTP settings */
+-$MAXTRIES = 5;		// max nr. of allowed failed logins before locking
+-$MAXDIFF  = 180;	// max. allowed drift of mobile device, defined in sec.
+-
+-
+-
+ /* RADIUS config */
+ // $RADIUS_CONF_CLIENTS = "/etc/freeradius/clients.conf";
+ 			// config file for radius clients
+@@ -27,6 +20,15 @@
+ 			// command for reloading freeradius
+ 
+ 
++/******************************************************************/
++/* all following settings are overwritten by settings in database */
++
++
++/* MOTP settings */
++$MAXTRIES = 5;		// max nr. of allowed failed logins before locking
++$MAXDIFF  = 180;	// max. allowed drift of mobile device, defined in sec.
++
++
+ /* Logs */
+ $LOGS_ROWS = 20;	// nr. of rows when showing logs
+ 
+diff -Nur MOTP-AS_v0.7/HTML/INC/db_func.php MOTP-AS_v0.7.2/HTML/INC/db_func.php
+--- MOTP-AS_v0.7/HTML/INC/db_func.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/INC/db_func.php	2012-03-11 14:22:28.000000000 +0100
+@@ -107,16 +107,28 @@
+ 	return TRUE;
+ }
+ 
++function log_purge ($table, $days) {
++	$query = "DELETE FROM $table "
++		. "WHERE time < FROM_DAYS(TO_DAYS(CURDATE())-$days)"
++		;
++	$result = mysql_query($query);
++	if (! $result) return FALSE;
++	return TRUE;
++}
++
+ function log_auth ($user, $type, $message) {
+ 	log_db ("log_auth", $user, $type, $message);
++	$purge = config('LOGS_PURGE_AUTH'); if ($purge && ($purge != 0)) log_purge("log_auth",$purge);
+ }
+ 
+ function log_acc ($user, $type, $message) {
+ 	log_db ("log_acc", $user, $type, $message);
++	$purge = config('LOGS_PURGE_ACC'); if ($purge && ($purge != 0)) log_purge("log_acc",$purge);
+ }
+ 
+ function log_audit ($user, $type, $message) {
+ 	log_db ("log_audit", $user, $type, $message);
++	$purge = config('LOGS_PURGE_AUDIT'); if ($purge && ($purge != 0)) log_purge("log_audit",$purge);
+ }
+ 
+ function count_logs ($log, $search, $start, $end) {
+@@ -586,7 +598,7 @@
+ 		$where = "WHERE name LIKE '%" . $name_filter . "%'"; 
+ 	else 
+ 		$where = "";
+-	$query = "SELECT id,name,enabled,secret,INET_NTOA(ip) AS ip "
++	$query = "SELECT id,name,enabled,secret,INET_NTOA(ipv4) AS ipv4,ipv6 "
+ 		. " FROM rad_clients " 
+ 		. $where 
+ 		. " ORDER BY name,id "
+@@ -594,25 +606,31 @@
+ 	$result = mysql_query($query);
+ 	if (! $result) return FALSE;
+ 	if (mysql_num_rows($result) == 0) return array();
+-	while ($row = mysql_fetch_object($result))
++	while ($row = mysql_fetch_object($result)) {
++		if ($row->ipv6) $row->ipv6 = inet_ntop($row->ipv6);
+ 		$radclients[] = $row;
++	}
+ 	return $radclients;
+ }
+ 
+ function get_radclient ($id) {
+-	$query = "SELECT id,name,enabled,secret,INET_NTOA(ip) AS ip FROM rad_clients WHERE id='$id'";
++	$query = "SELECT id,name,enabled,secret,INET_NTOA(ipv4) AS ipv4,ipv6 FROM rad_clients WHERE id='$id'";
+ 	$result = mysql_query($query);
+ 	if (! $result) return FALSE;
+ 	if (mysql_num_rows($result) == 0) return FALSE;
+ 	$row = mysql_fetch_object($result);
++	if ($row->ipv6) $row->ipv6 = inet_ntop($row->ipv6);
+ 	return $row;
+ }
+ 
+ function update_radclient ($client) {
++	if ($client->ipv6 != '') $ipv6="'".inet_pton($client->ipv6)."'"; else $ipv6="NULL";
++	if ( (! $client->ipv4) && (! $client->ipv6) ) { error_msg("No ip address given"); return FALSE; }
+ 	$query = "UPDATE rad_clients "
+ 		. "  SET   name='$client->name', "
+ 			. "secret='$client->secret', "
+-			. "ip=INET_ATON('$client->ip'), "
++			. "ipv4=INET_ATON('$client->ipv4'), "
++			. "ipv6=$ipv6, "
+ 			. "enabled='$client->enabled' "
+ 		. " WHERE id='$client->id'"
+ 		;
+@@ -630,13 +648,19 @@
+ 
+ function insert_radclient ($client) {
+ 	if (! $client->name) { error_msg("Client name empty."); return FALSE; }
+-	$query = "SELECT * FROM rad_clients WHERE name='$client->name' OR ip=INET_ATON('$client->ip')" ;
++	if ( (! $client->ipv4) && (! $client->ipv6) ) { error_msg("No ip address given"); return FALSE; }
++	if ($client->ipv6 != '') $ipv6="'".inet_pton($client->ipv6)."'"; else $ipv6="NULL";
++	$query  = "SELECT * FROM rad_clients"
++		. " WHERE name='$client->name'"
++		;
++	if ($client->ipv4) $query .= " OR ipv4=INET_ATON('$client->ipv4')";
++	if ($client->ipv6) $query .= " OR ipv6=$ipv6";
+ 	$result = mysql_query($query);
+ 	if ($result) $result = mysql_num_rows($result);
+ 	if ($result) { error_msg("Duplicate name or IP address."); return FALSE; }
+ 
+-	$query = "INSERT INTO rad_clients (name, secret, ip) "
+-		. "VALUES  ('$client->name', '$client->secret', INET_ATON('$client->ip')) "
++	$query = "INSERT INTO rad_clients (name, secret, ipv4, ipv6) "
++		. "VALUES  ('$client->name', '$client->secret', INET_ATON('$client->ipv4'), $ipv6) "
+ 		;
+ 	$result = mysql_query($query);
+ 	if (! $result) { error_msg("IP address incorrect."); return FALSE; }
+@@ -646,9 +670,10 @@
+ }
+ 
+ function get_freeradius_client ($ip) {
+-	$query = "SELECT name,secret FROM rad_clients "
+-	       . " WHERE enabled = TRUE "
+-	       . "   AND ip = INET_ATON('$ip')";
++	$ipv6 = inet_pton($ip);
++	$query  = "SELECT name,secret FROM rad_clients "
++		. " WHERE enabled = TRUE "
++		. "   AND ( (ipv4=INET_ATON('$ip')) OR (ipv6='$ipv6') )";
+ 	$result = mysql_query($query);
+ 	if (! $result) return FALSE;
+ 	if (mysql_num_rows($result) == 0) return FALSE;
+@@ -739,8 +764,11 @@
+ 
+ /* CONFIG */
+ 
+-function get_config ($userid = 0, $config = array()) {
++function get_config ($userid = 0, $scope = '', $config = array()) {
+ 	$query = "SELECT parameter,value FROM config WHERE userid='$userid'";
++	if ($scope != '')
++		$query .= " AND scope='$scope'";
++	$query .= " ORDER BY parameter";
+ 	$result = mysql_query($query);
+ 	if (! $result) return $config;
+ 	if (mysql_num_rows($result) == 0) return $config;
+@@ -749,5 +777,68 @@
+ 	return $config;
+ }
+ 
++function set_config ($userid, $par, $value ) {
++	$par = strtolower($par);
++	$query = "SELECT scope FROM config WHERE parameter='$par' AND userid='$userid'";
++	$result = mysql_query($query);
++	if (! $result) return FALSE;
++	$scope = '';
++	if (mysql_num_rows($result) > 0) {
++		$row = mysql_fetch_object($result);
++		$scope = $row->scope;
++		$query = "UPDATE config SET value='$value' WHERE parameter='$par' AND userid='$userid'";
++	} else {
++		$query = "INSERT INTO config (parameter, scope, userid, value) "
++			. "VALUES ('$par', '$scope', '$userid', '$value')" 
++			;
++	}
++	$result = mysql_query($query);
++	if (! $result) return FALSE;
++	return TRUE;
++}
++ 
++function delete_config ($userid, $par) {
++	if ($userid == 0) return FALSE;
++	$par = strtolower($par);
++	$query = "DELETE FROM config WHERE userid='$userid' AND parameter='$par'";
++	$result = mysql_query($query);
++	if (! $result) return FALSE;
++	return TRUE;
++}
++
++
++/* IM-/EXPORT */
++
++function db_export ($table) {
++	echo "# table: $table\n";
++	echo "# date: " . date("d.m.Y H:i:s") . "\n";
++
++	$query = "SELECT * FROM $table";
++	$result = mysql_query($query);
++	while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
++		echo "$table=" . serialize($row) . "\n";
++	}
++
++	echo "\n";
++}
++
++function db_import ($table, $backup) {
++	if ($table=="") return FALSE;
++	$data = unserialize($backup);
++	if ($data==FALSE) return FALSE;
++
++	$query = "REPLACE INTO $table ";
++	$del = " SET ";
++	foreach (array_keys($data) as $col) {
++		$query.= "$del `$col` = '" . $data[$col] . "'";
++		$del=',';
++	}
++	$result = mysql_query($query);
++	if (! $result) return FALSE;
++
++	return TRUE;
++}
++
++
+ 
+ ?>
+diff -Nur MOTP-AS_v0.7/HTML/INC/defs.php MOTP-AS_v0.7.2/HTML/INC/defs.php
+--- MOTP-AS_v0.7/HTML/INC/defs.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/INC/defs.php	2012-03-11 14:22:28.000000000 +0100
+@@ -16,9 +16,6 @@
+ 
+ /* configs */
+ 
+-
+-$CONFIG = get_config();
+-
+ if (isset($MAXTRIES))		$CONFIG['MAXTRIES']		= $MAXTRIES;
+ if (isset($MAXDIFF))		$CONFIG['MAXDIFF']		= $MAXDIFF;
+ if (isset($RADIUS_CONF_CLIENTS))$CONFIG['RADIUS_CONF_CLIENTS']	= $RADIUS_CONF_CLIENTS;
+@@ -31,8 +28,10 @@
+ if (isset($VALID_CHARS))	$CONFIG['VALID_CHARS']		= $VALID_CHARS;
+ if (isset($SHOW_BUTTONS))	$CONFIG['SHOW_BUTTONS']		= $SHOW_BUTTONS;
+ 
++$CONFIG = get_config();
++
+ if (isset($_SESSION['user']))
+-	$CONFIG = get_config( get_user_id($_SESSION['user']), $CONFIG);
++	$CONFIG = get_config( get_user_id($_SESSION['user']), '', $CONFIG);
+ 
+ function config( $par ) {
+ 	global $CONFIG;
+@@ -48,12 +47,16 @@
+ define('RADIUS_CONF_CLIENTS',	config('RADIUS_CONF_CLIENTS'));
+ define('RADIUS_SERV_RELOAD',	config('RADIUS_SERV_RELOAD'));
+ define('LOGS_ROWS',		config('LOGS_ROWS'));
++define('LOGS_PURGE_ACC',	config('LOGS_ROWS_ACC'));
++define('LOGS_PURGE_AUDIT',	config('LOGS_ROWS_AUDIT'));
++define('LOGS_PURGE_AUTH',	config('LOGS_ROWS_AUTH'));
+ define('SHOW_HELP',		config('SHOW_HELP'));
+ define('SHOW_HINT',		config('SHOW_HINT'));
+ define('SHOW_PIN',		config('SHOW_PIN'));
+ define('GENERATE_PASSCODE',	config('GENERATE_PASSCODE'));
+ define('VALID_CHARS',		config('VALID_CHARS'));
+ define('SHOW_BUTTONS',		config('SHOW_BUTTONS'));
++define('WARN_DELETE',		config('WARN_DELETE'));
+ 
+ // print_r($CONFIG);
+ 
+diff -Nur MOTP-AS_v0.7/HTML/INC/header.php MOTP-AS_v0.7.2/HTML/INC/header.php
+--- MOTP-AS_v0.7/HTML/INC/header.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/INC/header.php	2012-03-11 14:22:28.000000000 +0100
+@@ -33,7 +33,12 @@
+ <?php if ( $role == 'A' ) { ?>
+  <li><a href="#"><span>SYSTEM</span></a>
+   <ul>
+-   <li><a href="/phpmyadmin/">DATABASE SYSTEM</a></li>
++   <li><a href="#"><span>DATABASE</span></a>
++    <ul>
++     <li><a href="/phpmyadmin/">PHPMYADMIN</a></li>
++     <li><a href="db_tools.php">DB TOOLS</a></li>
++    </ul>
++   </li>
+    <li><a href="#"><span>RADIUS</span></a>
+     <ul>
+      <li><a href="radclients.php">RADIUS CLIENTS</a></li>
+@@ -66,6 +71,7 @@
+   <ul>
+    <li><a href="self.php">USER INFO</a></li>
+    <li><a href="self.php?action=change+pin">CHANGE PIN</a></li>
++   <li><a href="pref.php">PREFERENCES</a></li>
+    <li><a href="self.php?action=get+client">MOTP HTML CLIENT</a></li>
+   </ul>
+  </li>
+diff -Nur MOTP-AS_v0.7/HTML/INC/misc.php MOTP-AS_v0.7.2/HTML/INC/misc.php
+--- MOTP-AS_v0.7/HTML/INC/misc.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/INC/misc.php	2012-03-11 14:22:28.000000000 +0100
+@@ -75,6 +75,9 @@
+ 	   case '':		// dont show anything
+ 		return FALSE; 
+ 		break;
++	   case '-':		// dont show anything
++		return FALSE;
++		break;
+ 	   case 'A': 		// administrators can see all data
+ 		if ($sel_user == $cur_user) return $secret;
+ 		if ($cur_role == 'A') return $secret;
+@@ -187,8 +190,12 @@
+ }
+ 
+ 
+-function form_header ($method, $action) {
+-	return "<form method=\"$method\" action=\"$action\">\n";
++function form_header ($method, $action, $confirm = FALSE) {
++	if ($confirm)
++		$confirm = "onsubmit=\"return confirm('"
++			. addslashes(str_replace('&#039;',"'",$confirm))
++			. "');\"";
++	return "<form method=\"$method\" action=\"$action\" $confirm>\n";
+ }
+ 
+ function form_footer () {
+@@ -219,7 +226,11 @@
+ 
+ function input_image ($alt, $src) {
+ 	$src="IMG/".$src.".png";
+-	return "<input type=\"image\" src=\"$src\" alt=\"$alt\" title=\"$alt\" class=\"button submit\">\n";
++	return '<div class="button">'
++		. "<input type=\"image\" src=\"$src\" alt=\"$alt\" title=\"$alt\" class=\"button submit\">\n"
++		. "<div>$alt</div>"
++		. "</div>\n"
++		;
+ }
+ 
+ function input_area ($name, $text, $cols="", $rows="" ) {
+@@ -228,6 +239,10 @@
+ 	return "<textarea name=\"$name\" $cols $rows>$text</textarea>";
+ }
+ 
++function input_checkbox ($name, $value, $checked=FALSE) {
++	return "<input type=\"checkbox\" name=\"$name\" value=\"$value\"" . ($checked?"checked":"") . ">\n";
++}
++
+ function select_header ($name, $css = "") {
+ 	if ($css) $css=" style=\"$css\""; else $css= "";
+ 	return "<select name=\"$name\"$css>\n";
+diff -Nur MOTP-AS_v0.7/HTML/INC/types.php MOTP-AS_v0.7.2/HTML/INC/types.php
+--- MOTP-AS_v0.7/HTML/INC/types.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/INC/types.php	2012-03-11 14:22:28.000000000 +0100
+@@ -46,7 +46,8 @@
+ 	public $name;
+ 	public $enabled;
+ 	public $secret;
+-	public $ip;
++	public $ipv4;
++	public $ipv6;
+ }
+ 
+ class Rad_Profile {
+diff -Nur MOTP-AS_v0.7/HTML/index.php MOTP-AS_v0.7.2/HTML/index.php
+--- MOTP-AS_v0.7/HTML/index.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/index.php	2012-03-11 14:22:28.000000000 +0100
+@@ -62,6 +62,16 @@
+ </ul>
+ </div>
+ 
++<div class="stat">
++<div>Logging:</div>
++<ul>
++<li>Last Logins: <a href="logs.php?log=auth&count=last&type=success">successful</a> / <a href="logs.php?log=auth&count=last&type=failure">failured</a></li>
++<li>Last Accounting Requests: <a href="logs.php?log=acc&count=last&type=Start">Start</a> / <a href="logs.php?log=acc&count=last&type=Stop">Stop</a></li>
++<li>Last Changes: <a href="logs.php?log=audit&count=last&type=add">new entries</a> / <a href="logs.php?log=audit&count=last&type=delete">deleted entries</a> / <a href="logs.php?log=audit&count=last&type=static password set">static passwords</a></li>
++</ul>
++</div>
++
++
+ <?php
+ 
+ include 'INC/footer.php';
+diff -Nur MOTP-AS_v0.7/HTML/JS/hints.js MOTP-AS_v0.7.2/HTML/JS/hints.js
+--- MOTP-AS_v0.7/HTML/JS/hints.js	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/JS/hints.js	2012-03-11 14:22:28.000000000 +0100
+@@ -1,7 +1,7 @@
+ 
+ document.write(
+ 	  '<link href="CSS/hints.css" rel="stylesheet" type="text/css"/>'
+-	+ '<!--[if IE]>'
++	+ '<!--[if IE < 7.0]>'
+ 	+   '<link href="CSS/hints-ie.css" rel="stylesheet" type="text/css"/>'
+ 	+ '<![endif]-->'
+ );
+@@ -167,7 +167,7 @@
+ 
+ /********* RADIUS IP **********************/
+ 
+-function checkip (ip) {
++function checkipv4 (ip) {
+ 	if (ip == "0.0.0.0") return false;
+ 	if (ip == "255.255.255.255") return false;
+ 	var pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+@@ -179,16 +179,25 @@
+ 	return true;
+ }
+ 
++function checkipv6 (ip) {
++	var pattern = /^([0-9a-f]{1,4}:+)*::?([0-9a-f]{1,4}:+)*[0-9a-f]{1,4}$/i;
++	if ( ip.match(pattern) )
++		return true;
++	return false;
++}
++
+ if (document.getElementById("radius-ip")) {
+-	var html = '<li id="i1">Valid IP address</li>'
+-	;
++	var html = '<li id="i1">Valid IP address</li>' ;
+ 	var checkfunc = function () {
+ 		var value = document.getElementById("radius-ip").value;
+ 
+ 		var img = BAD;
+-		if (checkip(value)) img = GOOD;
++		if ( checkipv4(value) || checkipv6(value) ) img = GOOD;
+ 		document.getElementById("i1").style.listStyleImage = imgurl(img);
+ 
++		if ( checkipv4(value) ) text = 'Valid IPv4 address' ;
++		if ( checkipv6(value) ) text = 'Valid IPv6 address' ;
++		document.getElementById("i1").innerText = text;
+ 	};
+ 	var text = false;
+ 	activate("radius-ip",html,checkfunc,text);
+diff -Nur MOTP-AS_v0.7/HTML/logs.php MOTP-AS_v0.7.2/HTML/logs.php
+--- MOTP-AS_v0.7/HTML/logs.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/logs.php	2012-03-11 14:22:28.000000000 +0100
+@@ -30,6 +30,17 @@
+ $to="<a href=\"javascript:NewCssCal('to','yyyyMMdd','Arrow','true','24','true')\"><img src=\"IMG/cal.gif\"></a>";
+ 
+ 
++if ($count == "last") {
++	$start="";
++	$count = count_logs($log, $search, $start, $end);
++	$search->id =  $count - LOGS_ROWS;
++	if ($search->id < 0)
++		$search->id=0;
++	else
++		$count = $count - ($count % LOGS_ROWS);
++}
++
++
+ echo form_header( "GET",  "logs.php" ); 
+ echo input_hidden ( "log", $log );
+ echo table_header( array( "Time", "User", "Type", "Message" ), "list" );
+diff -Nur MOTP-AS_v0.7/HTML/pref.php MOTP-AS_v0.7.2/HTML/pref.php
+--- MOTP-AS_v0.7/HTML/pref.php	1970-01-01 01:00:00.000000000 +0100
++++ MOTP-AS_v0.7.2/HTML/pref.php	2012-03-11 14:22:28.000000000 +0100
+@@ -0,0 +1,148 @@
++<?php
++
++include 'INC/session.php';
++
++include 'INC/include.php';
++
++$title = "MOTP-AS - Preferences";
++include 'INC/header.php';
++
++if (isset($_POST['action'])) $action=input($_POST['action']); else $action="";
++
++$bcs = array ( array("index.php","home"), array("pref.php","Preferences") );
++
++$userid  = get_user_id($_SESSION['user']);
++if ($userid == 0) 
++	stop("","");
++
++
++$global_prefs = get_config(0);
++$local_prefs = get_config($userid);
++
++$scope_global = get_config(0,'G');
++$scope_admin= get_config(0,'A');
++
++
++if ($action == "update") {
++
++	if (isset($_POST['gp']))
++	   foreach (array_keys($_POST['gp']) as $par) {
++		if ($role != 'A') continue;
++		$value = input($_POST['gp'][$par]);
++		if ($value == "") continue;
++		if ($value != $global_prefs[$par]) {
++			// echo "Global: $par = $value\n";
++			set_config(0,$par,$value);
++			log_audit($_SESSION['user'],"setting global","$par = $value");
++		}
++	}
++
++	if (isset($_POST['lp']))
++	   foreach (array_keys($_POST['lp']) as $par) {
++		$value = input($_POST['lp'][$par]);
++		if (array_key_exists($par,$scope_global)) continue;
++		if ($role != 'A') {
++			if (array_key_exists($par,$scope_admin)) continue;
++		}
++		if ($value == "") {
++			if (! (array_key_exists($par,$local_prefs)) ) continue;
++			// echo "Deleting: $par\n";
++			delete_config($userid,$par);
++			log_audit($_SESSION['user'],"setting local","removed: $par");
++		} elseif ( (!(array_key_exists($par,$local_prefs))) || ($value != $local_prefs[$par]) ) {
++			// echo "Local: $par = $value\n";
++			set_config($userid,$par,$value);
++			log_audit($_SESSION['user'],"setting local","$par = $value");
++		}
++	}
++
++	$global_prefs = get_config(0);
++	$local_prefs = get_config($userid);
++}
++
++
++/* show preferences */
++echo form_header("POST", "pref.php");
++echo input_hidden("action","update");
++
++echo table_header( array("","Global Settings","Personal Settings"), "edit");
++
++function input_element ($name,$value,$select) {
++	if ($select) {
++		$ret = select_header($name);
++		foreach ($select as $option)
++			$ret .= select_option($option,$option,"$value"===$option);
++		$ret .= select_footer();
++		return $ret;
++	}
++	$size=strlen($value)+3;
++	if ($size<10) $size=10;
++	if ($size>20) $size=20;
++	return input_text($name,$value,$size);
++}
++
++
++foreach (array_keys($global_prefs) as $par) {
++	$select=FALSE;
++
++	$global = $global_prefs[$par];
++	if ( ($global==="TRUE") || ($global==="FALSE") ) $select=array("TRUE","FALSE");
++	if ($role == 'A')
++		$global = input_element("gp[$par]",$global,$select);
++	elseif (strlen($global)>20)
++		$global = chunk_split($global,20,br());
++
++	$change = TRUE;
++	if (array_key_exists($par,$scope_admin)) $change=FALSE;
++	if ($role == 'A') $change = TRUE;
++	if (array_key_exists($par,$scope_global)) $change=FALSE;
++	$local = "";
++	if (array_key_exists($par,$local_prefs)) $local=$local_prefs[$par];	
++	if ($select) $select=array("","TRUE","FALSE");
++	if ($change)
++		$local = input_element("lp[$par]",$local,$select);
++	else
++		$local = "-";
++
++	echo table_row( array( $par, $global, $local) ) ;
++
++}
++
++
++echo table_footer();
++
++echo input_submit("Update");
++echo form_footer();
++
++
++$help	= ""
++	. p("GENERATE_PASSCODE = whether to show \"generate passcode\" button for accounts (TRUE/FALSE)")
++	. p("LOGS_PURGE_<i>xxx</i> = automatically purge log entries after this number of days (0 = never)")
++		. li("ul",array(
++			array("acc"," - Accounting Log"),
++			array("audit"," - Audit Log"),
++			array("auth"," - Authentication Log")
++		))
++	. p("LOGS_ROWS = nr. of rows when showing logs")
++	. p("MAXDIFF = max. allowed drift of mobile device, defined in sec.; default: 180")
++	. p("MAXTRIES = max nr. of allowed failed logins before locking; default: 5")
++	. p("SHOW_HELP = whether to show help box (TRUE/FALSE)")
++	. p("SHOW_HINT = whether to show interactive hints (TRUE/FALSE)")
++	. p("SHOW_BUTTONS = whether to show graphical buttons (TRUE/FALSE)")
++	. p("SHOW_PIN = "
++		. li("ul",array(
++			array("-"," - do not show PIN"),
++			array("S"," - show PIN only to User (self)"),
++			array("A"," - show PIN to Administrators (and Users)"),
++			array("H"," - show PIN to Helpdesk, too, but only if not data of Administrator or other Helpdesk")
++		))
++	)
++	. p("VALID_CHARS = valid characters in username, verified for RADIUS logins")
++	. p("WARN_DELETE = confirm deletion of data")
++	;
++
++
++
++include 'INC/footer.php';
++
++?>
+diff -Nur MOTP-AS_v0.7/HTML/radclient.php MOTP-AS_v0.7.2/HTML/radclient.php
+--- MOTP-AS_v0.7/HTML/radclient.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/radclient.php	2012-03-11 14:22:28.000000000 +0100
+@@ -22,7 +22,7 @@
+ 	$client->enabled = FALSE;
+ 	update_radclient ($client);
+ 	rad_save();
+-	log_audit($_SESSION['user'],"radclient lock","Client: $client->name ($client->ip)");
++	log_audit($_SESSION['user'],"radclient lock","Client: $client->name ($client->ipv4$client->ipv6)");
+ 	$bcs[3]=array("radclient.php?client=$clientid","$client->name");
+ }
+ 
+@@ -30,13 +30,13 @@
+ 	$client->enabled = TRUE;
+ 	update_radclient ($client);
+ 	rad_save();
+-	log_audit($_SESSION['user'],"radclient reset","Client: $client->name ($client->ip)");
++	log_audit($_SESSION['user'],"radclient reset","Client: $client->name ($client->ipv4$client->ipv6)");
+ 	$bcs[3]=array("radclient.php?client=$clientid","$client->name");
+ }
+ 
+ if ($action == "delete") {
+ 	delete_radclient ($client);
+-	log_audit($_SESSION['user'],"radclient delete","Client: $client->name ($client->ip)");
++	log_audit($_SESSION['user'],"radclient delete","Client: $client->name ($client->ipv4$client->ipv6)");
+ 	rad_save();
+ 	stop("ok","RADIUS client deleted");
+ }
+@@ -44,16 +44,28 @@
+ if ($action == "insert") {
+ 	if (isset($_POST['name']))   $client->name   = $_POST['name'];
+ 	if (isset($_POST['secret'])) $client->secret = $_POST['secret'];
+-	if (isset($_POST['ip']))     $client->ip     = $_POST['ip'];
++	if (isset($_POST['ip']))     $ip = $_POST['ip']; else $ip=NULL;
++
++	$pattern_ipv4 = '/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/';
++	$pattern_ipv6 = '/^[0-9A-Fa-f:]+$/';
++
++	$client->ipv4 = $client->ipv6 = NULL;
++	if (preg_match($pattern_ipv4, $ip))
++		$client->ipv4 = $ip;
++	elseif (preg_match($pattern_ipv6, $ip))
++		$client->ipv6 = $ip;
++	else
++		stop("error", "Invalid IP address");
+ 
+ 	if ($clientid==0) {
+ 		$client=insert_radclient ($client);
+ 		if (! $client) stop("error", "Could not add client: " . error_msg() );
+ 		$clientid=$client->id;
+-		log_audit($_SESSION['user'],"radclient add","Client: $client->name ($client->ip)");
++		log_audit($_SESSION['user'],"radclient add","Client: $client->name ($ip)");
+ 	} else {
+-		update_radclient ($client);
+-		log_audit($_SESSION['user'],"radclient modify","Client: $client->name ($client->ip)");
++		$ok = update_radclient ($client);
++		if (! $ok) stop("error", "Could not update client: " . error_msg() );
++		log_audit($_SESSION['user'],"radclient modify","Client: $client->name ($ip)");
+ 	}
+ 	$bcs[3]=array("radclient.php?client=$clientid","$client->name");
+ 
+@@ -70,7 +82,7 @@
+ 
+ 	echo table_row( array( "Name: ",   input_text("name",   $client->name, 15)   ) ) ;
+ 	echo table_row( array( "Secret: ", input_text("secret", $client->secret, 15) ) ) ;
+-	echo table_row( array( "IP: ",     input_text("ip",     $client->ip, 15, 'id="radius-ip"') ) ) ;
++	echo table_row( array( "IP: ",     input_text("ip",     "$client->ipv4$client->ipv6", 15, 'id="radius-ip"') ) ) ;
+ 
+ 	echo table_footer();
+ 
+@@ -92,13 +104,14 @@
+ 	echo table_row( array( "Name:",   $client->name) ); 
+ 	echo table_row( array( "Status:", ($client->enabled) ? "enabled" : "disabled" ) );
+ 	echo table_row( array( "Secret:", $client->secret) );
+-	echo table_row( array( "IP:",     $client->ip) );
++	echo table_row( array( "IP:",     "$client->ipv4$client->ipv6") );
+ 	echo table_footer(); 
+ 
+ 	echo form_header("POST", "radclient.php?client=$clientid") . input_hidden("action", "disable") . input_submit("Disable","lock")  . form_footer();
+ 	echo form_header("POST", "radclient.php?client=$clientid") . input_hidden("action", "enable")  . input_submit("Enable","reset")  . form_footer();
+ 	echo form_header("POST", "radclient.php?client=$clientid") . input_hidden("action", "edit")    . input_submit("Edit","edit")     . form_footer();
+-	echo form_header("POST", "radclient.php?client=$clientid") . input_hidden("action", "delete")  . input_submit("Delete","delete") . form_footer();
++	$warn = (WARN_DELETE) ? "Are you sure to delete RADIUS client '$client->name'?" : FALSE;
++	echo form_header("POST", "radclient.php?client=$clientid", $warn) . input_hidden("action", "delete")  . input_submit("Delete","delete") . form_footer();
+ 
+ 	$bcs[3]=array("radclient.php?client=$clientid","$client->name");
+ 
+diff -Nur MOTP-AS_v0.7/HTML/radclients.php MOTP-AS_v0.7.2/HTML/radclients.php
+--- MOTP-AS_v0.7/HTML/radclients.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/radclients.php	2012-03-11 14:22:28.000000000 +0100
+@@ -33,7 +33,7 @@
+ 	echo table_row ( array (
+ 		a("radclient.php?client=$client->id", $client->name) ,
+ 		$client->secret ,
+-		$client->ip ,
++		( $client->ipv4 ? $client->ipv4 : $client->ipv6 ),
+ 		( ($client->enabled) ? "enabled" : "disabled" )
+ 	) );
+ 	if (! $client->enabled) $help=p("Please note, that one or more RADIUS clients are disabled.");
+diff -Nur MOTP-AS_v0.7/HTML/radprofile.php MOTP-AS_v0.7.2/HTML/radprofile.php
+--- MOTP-AS_v0.7/HTML/radprofile.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/radprofile.php	2012-03-11 14:22:28.000000000 +0100
+@@ -106,7 +106,8 @@
+ 	echo table_footer(); 
+ 
+ 	echo form_header("POST","radprofile.php?profile=$profileid") . input_hidden("action", "edit")   . input_submit("Edit","edit") . form_footer();
+-	echo form_header("POST","radprofile.php?profile=$profileid") . input_hidden("action", "delete") . input_submit("Delete","delete") . form_footer();
++	$warn = (WARN_DELETE) ? "Are you sure to delete this RADIUS profile?" : FALSE;
++	echo form_header("POST","radprofile.php?profile=$profileid", $warn) . input_hidden("action", "delete") . input_submit("Delete","delete") . form_footer();
+ 
+ 	$bcs[3]=array("radprofile.php?profile=$profileid","$profile->attr $profile->op $profile->value");
+ 
+diff -Nur MOTP-AS_v0.7/HTML/static.php MOTP-AS_v0.7.2/HTML/static.php
+--- MOTP-AS_v0.7/HTML/static.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/static.php	2012-03-11 14:22:28.000000000 +0100
+@@ -28,7 +28,7 @@
+ 
+ if ($action == "delete") {
+ 	delete_static ($userid);
+-	log_audit($_SESSION['user'],"static delete","User: $user->user ($user->name)");
++	log_audit($_SESSION['user'],"static delete","User #$user->id: $user->user ($user->name)");
+ 	stop("ok","Static password deleted");
+ }
+ 
+@@ -46,7 +46,7 @@
+ 	}
+ 
+ 	set_static ($static);
+-	log_audit($_SESSION['user'],"static password set","User: $user->user ($user->name); Until: $static->until; Howoften: $static->howoften");
++	log_audit($_SESSION['user'],"static password set","User #$user->id: $user->user ($user->name); Until: $static->until; Howoften: $static->howoften");
+ 	$msg="Static Password set."; $status="ok";
+ 	if ( ($static->until==0) && ($static->howoften==-1) ) {
+ 		$msg="Please note, that user must have a limitation (time range or number of allowed logins) to use static password for RADIUS authentication!" .br(). "Without limitations, the static password can only be used for login to Web Administration.";
+@@ -65,7 +65,7 @@
+ echo table_row( array( "Valid until", input_text("until", ($static->until==0) ? "unlimited" : $static->until , 14, "id=\"cal\"" ) . $cal ) ) ;
+ echo table_row( array( "Valid for ", input_text("howoften", ($static->howoften<0) ? "unlimited" : $static->howoften ) . "logins") ) ;
+ echo table_footer();
+-echo input_submit("Ok","send");
++echo input_submit("Set","send");
+ echo form_footer();
+ 
+ echo form_header("POST", "static.php?user=" . $userid );
+diff -Nur MOTP-AS_v0.7/HTML/sync.php MOTP-AS_v0.7.2/HTML/sync.php
+--- MOTP-AS_v0.7/HTML/sync.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/sync.php	2012-03-11 14:22:28.000000000 +0100
+@@ -62,7 +62,7 @@
+ 
+ 	$status = update_device($device);
+ 	if (! $status) stop("error","Could not update device");
+-	log_audit($_SESSION['user'],"device synced","Device: $device->id ($device->name); Timezone: $device->timezone, Offset: $device->offset");
++	log_audit($_SESSION['user'],"device synced","Device #$device->id: $device->name; Timezone: $device->timezone, Offset: $device->offset");
+ 
+ 	stop("ok","Device synced. Timezone: $device->timezone, Offset: $device->offset");
+ }
+@@ -77,7 +77,7 @@
+ echo table_footer();
+ 
+ echo input_hidden("action","sync");
+-echo input_submit("Sync");
++echo input_submit("Sync","send");
+ echo form_footer();
+ 
+ $help   = p("To sync the device, there are two possibilites:") 
+diff -Nur MOTP-AS_v0.7/HTML/user.php MOTP-AS_v0.7.2/HTML/user.php
+--- MOTP-AS_v0.7/HTML/user.php	2011-07-10 10:31:44.000000000 +0200
++++ MOTP-AS_v0.7.2/HTML/user.php	2012-03-11 14:22:28.000000000 +0100
+@@ -32,19 +32,19 @@
+ 	// check_role_rights($user->role);
+ 	$user->enabled = FALSE;
+ 	update_user ($user);
+-	log_audit($_SESSION['user'],"user lock","User: $user->user ($user->name)");
++	log_audit($_SESSION['user'],"user lock","User #$user->id: $user->user ($user->name)");
+ }
+ 
+ if ($action == "reset") {
+ 	$user->enabled = TRUE;
+ 	$user->tries   = 0;
+ 	update_user ($user);
+-	log_audit($_SESSION['user'],"user reset","User: $user->user ($user->name)");
++	log_audit($_SESSION['user'],"user reset","User #$user->id: $user->user ($user->name)");
+ }
+ 
+ if ($action == "delete") {
+ 	delete_user ($user);
+-	log_audit($_SESSION['user'],"user delete","User: $user->user ($user->name)");
++	log_audit($_SESSION['user'],"user delete","User #$user->id: $user->user ($user->name)");
+ 	array_splice($bcs,2);
+ 	stop("ok","User deleted");
+ }
+@@ -62,10 +62,10 @@
+ 		if (! $user) stop("error", "Could not add user: " . error_msg() );
+ 		$userid=$user->id;
+ 		$bcs[3]=array("user.php?user=$userid","$user->user");
+-		log_audit($_SESSION['user'],"user add","User: $user->user ($user->name)");
++		log_audit($_SESSION['user'],"user add","User #$user->id: $user->user ($user->name)");
+ 	} else {
+ 		update_user ($user);
+-		log_audit($_SESSION['user'],"user modify","User: $user->user ($user->name)");
++		log_audit($_SESSION['user'],"user modify","User #$user->id: $user->user ($user->name)");
+ 	}
+ }
+ 
+@@ -130,8 +130,9 @@
+ 	echo form_header("POST", "user.php?user=$userid") . input_hidden("action", "lock")   . input_submit("Lock", "lock")     . form_footer();
+ 	echo form_header("POST", "user.php?user=$userid") . input_hidden("action", "reset")  . input_submit("Reset", "reset")   . form_footer();
+ 	echo form_header("POST", "user.php?user=$userid") . input_hidden("action", "edit")   . input_submit("Edit", "edit")     . form_footer();
+-	echo form_header("POST", "user.php?user=$userid") . input_hidden("action", "delete") . input_submit("Delete", "delete") . form_footer();
+-	echo form_header("POST", "user.php?user=$userid") . input_hidden("action", "static password") . input_submit("Set Static Password") . form_footer();
++	$warn = (WARN_DELETE) ? "Are you sure to delete user '$user->user'?" : FALSE;
++	echo form_header("POST", "user.php?user=$userid", $warn) . input_hidden("action", "delete") . input_submit("Delete", "delete") . form_footer();
++	echo form_header("POST", "user.php?user=$userid") . input_hidden("action", "static password") . input_submit("Static Password","static") . form_footer();
+ 
+         $help   = p("lock = lock user; authentication with this user is no longer possible") 
+                 . p("reset = unlock user, if locked, and reset number of failed logins.")

@@ -1,0 +1,2 @@
+user,"Name of User",role,"Device name",Secret,Timezone,PIN,"Static Password",password-usage-count,password-expiration
+john,,U,nokia,1234567812345678,,1234,init-pw,1,

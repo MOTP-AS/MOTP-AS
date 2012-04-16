@@ -1,0 +1,37 @@
+
+Mobile OTP Authentication Server - MOTP-AS
+==========================================
+
+MOTP-AS is an add-on for the Mobile OTP authentication framework.
+For more details about Mobile OTP see http://motp.sourceforge.net/.
+
+
+With MOTP-AS you can build an authentication server with
+
+  * authenticating users by RADIUS
+	RADIUS is a standard protocol used by many routers, firewalls and VPN
+	gateways. It is also possible to use it to authenticate users against
+	Apache, Unix (PAM) and other applications.
+
+  * SQL database for user/device configuration
+	All configuration and administration data is stored into a SQL database.
+	This includes users and devices (secrets)
+
+  * Administration Web Interface
+	Adminstration of the SQL database can be performed by an Administration
+	Web Interface which supports different roles for Administrators, 
+	Help Desk and Users.
+
+
+Compared to other MOTP implementations, MOTP-AS provides the following features:
+
+ - A user can have more then one device or pin, respectively. 
+ - Many users can share the same device (using different pins).
+ - Users can change their pins by login on the Web Administration Interface
+ - The server automatically learns device time drifts by storing the time shift
+ - Users can have temporary static passwords
+
+
+If you have any questions or want to report a bug, please send an email to 
+motp-as@network-cube.de
+
