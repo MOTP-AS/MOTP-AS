@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>MOTP-AS by JonTheNiceGuy</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/JonTheNiceGuy/motp-as">Fork On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/JonTheNiceGuy/motp-as/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/JonTheNiceGuy/motp-as/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>MOTP-AS</h1>
+          <p>An implementation of the M-OTP algorythm, for integration with FreeRadius. M-OTP generates One Time Passcodes which can be validated against codes generated on mobile devices, HTML token generators and more.</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/JonTheNiceGuy">JonTheNiceGuy</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>Mobile OTP Authentication Server - MOTP-AS</h1>
+
+<p>MOTP-AS is an add-on for the Mobile OTP authentication framework.
+For more details about Mobile OTP see <a href="http://motp.sourceforge.net/">http://motp.sourceforge.net/</a>.</p>
+
+<p>With MOTP-AS you can build an authentication server with</p>
+
+<ul>
+<li>authenticating users by RADIUS</li>
+</ul><p>RADIUS is a standard protocol used by many routers, firewalls and VPN gateways. It is also possible to use it to authenticate users against Apache, Unix (PAM) and other applications.</p>
+
+<ul>
+<li>SQL database for user/device configuration</li>
+</ul><p>All configuration and administration data is stored into a SQL database. This includes users and devices (secrets)</p>
+
+<ul>
+<li>Administration Web Interface</li>
+</ul><p>Adminstration of the SQL database can be performed by an Administration Web Interface which supports different roles for Administrators, Help Desk and Users.</p>
+
+<p>Compared to other MOTP implementations, MOTP-AS provides the following features:</p>
+
+<ul>
+<li>A user can have more then one device or pin, respectively. </li>
+<li>Many users can share the same device (using different pins).</li>
+<li>Users can change their pins by login on the Web Administration Interface</li>
+<li>The server automatically learns device time drifts by storing the time shift</li>
+<li>Users can have temporary static passwords</li>
+</ul><p>If you have any questions, please <a href="mailto:motp-as@network-cube.de">send us an email</a>. To report a bug, please use the GitHub bug tracker.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+    
+  </body>
+</html>
