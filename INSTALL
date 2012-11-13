@@ -89,3 +89,15 @@ CONFIGURATION
 	=> admin
 	=> static password
 
+-------------------------
+LDAP
+-------------------------
+
+In version 0.8, LDAP functionality was included. It has not been strongly,
+and a patch has been submitted to resolve some issues. If you use the new
+LDAP functionality with Active Directory users, please add the following
+script to your crontab:
+
+/path/to/php -f /path/to/motp-as/ldap.php 1
+
+This functionality will also require additional PHP modules to be installed.

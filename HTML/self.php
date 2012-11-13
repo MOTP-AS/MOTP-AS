@@ -7,6 +7,11 @@ include 'INC/include.php';
 $title = "MOTP-AS - Settings";
 include 'INC/header.php';
 
+include 'INC/ldap_func.php';
+$cmd="";
+if (isset($_GET['cmd']))  $cmd=input($_GET['cmd']); 	// for direct links
+if (isset($_POST['cmd'])) $cmd=input($_POST['cmd']); 
+
 $action="";
 if (isset($_GET['action']))  $action=input($_GET['action']); 	// for direct links
 if (isset($_POST['action'])) $action=input($_POST['action']); 
@@ -97,6 +102,24 @@ if ($action == "change pin") {
 	$hint = TRUE;
 	$bcs = array ( array("index.php","home"), array("self.php?action=change+pin","Change PIN") );
 
+} else if ($action == "ldap") {
+
+        echo table_header(FALSE, "show");
+        echo table_row( array( "Ldap server:", @LDAP_SERVER) );
+        echo table_row( array( "Ldap dn:", @LDAP_DN) );
+        echo table_row( array( "Ldap login:", @LDAP_LOGIN) );
+        echo table_row( array( "Ldap filter:", @LDAP_FILTER) );
+
+        if ($cmd==1) 
+        echo table_row( array( "Sync. obj:",SyncLdapUsers() ));
+
+        echo table_footer();
+
+        echo form_header("POST", "self.php");
+        echo input_hidden("action","ldap");
+        echo input_hidden("cmd","1");
+        echo input_submit("Sync. Users");
+        echo form_footer(); 
 } else if ($action == "get client") {
 
         if ($accounts == array() ) {
@@ -120,9 +143,7 @@ if ($action == "change pin") {
 
 	$bcs = array ( array("index.php","home"), array("self.php?action=get+client","HTML client") );
 
-	$help   = p("Please be aware, that secret is stored in HTML client in clear text!")
-                ;
-
+	$help   = p("Please be aware, that secret is stored in HTML client in clear text!");
 
 } else {
 	/* show user data */

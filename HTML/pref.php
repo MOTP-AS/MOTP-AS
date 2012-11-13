@@ -88,7 +88,8 @@ function input_element ($name,$value,$select) {
 	if ($size>20) $size=20;
 	return input_text($name,$value,$size);
 }
-
+if ((strstr($par, "PASSWD")) and !($role == 'A'))   
+        $global = "******";
 
 foreach (array_keys($global_prefs) as $par) {
 	$select=FALSE;

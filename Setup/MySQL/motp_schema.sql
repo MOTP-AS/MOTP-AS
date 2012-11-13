@@ -128,6 +128,11 @@ INSERT INTO `static` (`userid`, `salt`, `hash`) VALUES
 -- config --
 
 INSERT INTO `config` (`realm`, `userid`, `scope`, `parameter`, `value`) VALUES
+('S', '0', 'G', 'ldap_login', 'cn=ldap,cn=Users,dc=test,DC=com'),
+('S', '0', 'G', 'ldap_password', 'password'),
+('S', '0', 'G', 'ldap_server', '127.0.0.1'),
+('S', '0', 'G', 'ldap_dn', 'dc=test,DC=com'),
+('S', '0', 'G', 'ldap_filter', '(&(objectCategory=Person)(objectClass=User)(memberOf=CN=VPNOTP,OU=Security,OU=Administrative_Groups,OU=newou,DC=test,DC=com))'),
 ('S', '0', 'G', 'lock_grace_mins', '0'),
 ('S', '0', 'G', 'maxdiff', '180'),
 ('S', '0', 'G', 'maxtries', '5'),

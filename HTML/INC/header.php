@@ -79,6 +79,7 @@
    <li><a href="self.php?action=change+pin">CHANGE PIN</a></li>
    <li><a href="pref.php">PREFERENCES</a></li>
    <li><a href="self.php?action=get+client">MOTP HTML CLIENT</a></li>
+   <li><a href="self.php?action=ldap">LDAP</a></li>
   </ul>
  </li>
 <?php } ?>
