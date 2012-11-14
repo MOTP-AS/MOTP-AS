@@ -58,6 +58,11 @@ define('LOGS_PURGE_AUDIT',	config('LOGS_ROWS_AUDIT'));
 define('LOGS_PURGE_AUTH',	config('LOGS_ROWS_AUTH'));
 define('PIN_MIN_LENGTH',	config('PIN_MIN_LENGTH'));
 define('USE_LDAP',		config('USE_LDAP'));
+define('LDAP_LOGIN',		config('LDAP_LOGIN'));
+define('LDAP_PASSWD',		config('LDAP_PASSWD'));
+define('LDAP_SERVER',		config('LDAP_SERVER'));
+define('LDAP_DN',		config('LDAP_DN'));
+define('LDAP_FILTER',		config('LDAP_FILTER'));
 define('VALID_CHARS',		config('VALID_CHARS'));
 
 /* preferences */
